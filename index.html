@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>داشبورد مستودع موصول — العُلا</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --dk:#0D1B2E;--md:#0F2744;--cy:#00B8D9;--cyl:#5DD6EE;
+  --cyp:rgba(0,184,217,0.13);--wh:#fff;--gr:#8BA3BC;--cb:#CBD8E6;
+  --warn:#FFB000;--danger:#F97068;--ok:#00C878;--brd:rgba(0,184,217,0.15);
+}
+html,body{min-height:100%;background:var(--md);font-family:'Segoe UI',Tahoma,Arial,sans-serif;}
+/* ─── TOP BAR ─── */
+.topbar{background:var(--dk);padding:11px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--brd);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-ar{font-size:17px;font-weight:600;color:#fff;letter-spacing:.5px;}
+.logo-en{font-size:10px;color:var(--cy);letter-spacing:2px;}
+.nav{display:flex;gap:5px;flex-wrap:wrap;}
+.nav-btn{font-size:11px;padding:5px 13px;border-radius:20px;border:0.5px solid rgba(0,184,217,0.35);background:transparent;color:var(--gr);cursor:pointer;transition:.18s;}
+.nav-btn:hover{color:var(--cy);border-color:var(--cy);}
+.nav-btn.active{background:var(--cy);color:var(--dk);border-color:var(--cy);font-weight:600;}
+.live{font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(0,200,120,0.2);color:var(--ok);border:0.5px solid rgba(0,200,120,0.3);}
+/* ─── PAGES ─── */
+.page{display:none;padding:16px;animation:fadeIn .2s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* ─── KPI ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:14px;}
+.kpi{background:var(--dk);border-radius:10px;padding:12px 14px;border:0.5px solid var(--brd);cursor:pointer;transition:.2s;}
+.kpi:hover{border-color:var(--cy);transform:translateY(-1px);}
+.kpi-label{font-size:10px;color:var(--gr);margin-bottom:3px;}
+.kpi-val{font-size:22px;font-weight:700;color:#fff;}
+.kpi-sub{font-size:9px;margin-top:3px;}
+.kpi-link{font-size:9px;color:var(--cy);margin-top:5px;opacity:.7;}
+.up{color:var(--ok);}
+.dn{color:var(--danger);}
+.wr{color:var(--warn);}
+/* ─── GRID ─── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+.gfull{margin-bottom:10px;}
+/* ─── CARD ─── */
+.card{background:var(--dk);border-radius:10px;padding:13px;border:0.5px solid var(--brd);}
+.card-title{font-size:10px;font-weight:600;color:var(--cy);margin-bottom:11px;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;justify-content:space-between;}
+.card-link{font-size:9px;color:var(--gr);cursor:pointer;padding:2px 8px;border-radius:10px;border:0.5px solid rgba(255,255,255,0.1);}
+.card-link:hover{color:var(--cy);border-color:var(--cy);}
+/* ─── SUMMARY CARDS (sub-dash links) ─── */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px;}
+.sumcard{background:var(--dk);border-radius:12px;padding:16px;border:0.5px solid var(--brd);cursor:pointer;transition:.2s;position:relative;overflow:hidden;}
+.sumcard:hover{border-color:var(--cy);transform:translateY(-2px);}
+.sumcard::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sumcard.inv::after{background:var(--cy);}
+.sumcard.nm::after{background:var(--danger);}
+.sumcard.disp::after{background:var(--warn);}
+.sumcard.emp::after{background:var(--ok);}
+.sumcard-icon{font-size:22px;margin-bottom:8px;}
+.sumcard-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:10px;}
+.sumcard-stat{font-size:11px;color:var(--gr);margin-bottom:3px;}
+.sumcard-stat span{color:#fff;font-weight:600;}
+.sumcard-btn{margin-top:12px;font-size:10px;padding:4px 12px;border-radius:20px;border:0.5px solid rgba(0,184,217,0.35);background:transparent;color:var(--cy);cursor:pointer;width:100%;text-align:center;}
+.sumcard-btn:hover{background:var(--cyp);}
+/* ─── BARS ─── */
+.bar-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.bar-name{font-size:10px;color:var(--cb);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+.bar-val{font-size:10px;color:var(--gr);min-width:32px;text-align:left;}
+/* ─── TABLES ─── */
+.tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.tbl th{text-align:right;padding:6px 8px;color:var(--gr);font-weight:500;border-bottom:0.5px solid rgba(255,255,255,0.07);font-size:10px;}
+.tbl td{padding:7px 8px;color:var(--cb);border-bottom:0.5px solid rgba(255,255,255,0.04);}
+.tbl tr:last-child td{border:none;}
+.tbl tr:hover td{background:rgba(0,184,217,0.04);}
+/* ─── BADGES ─── */
+.badge{font-size:9px;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.b-red{background:rgba(249,112,104,0.15);color:var(--danger);}
+.b-yellow{background:rgba(255,176,0,0.15);color:var(--warn);}
+.b-green{background:rgba(0,200,120,0.15);color:var(--ok);}
+.b-blue{background:rgba(0,184,217,0.15);color:var(--cy);}
+.b-gray{background:rgba(255,255,255,0.07);color:var(--gr);}
+/* ─── EMPLOYEE ─── */
+.emp-row{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.emp-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.emp-name{font-size:11px;color:#fff;font-weight:500;}
+.emp-role{font-size:9px;color:var(--gr);}
+.stars{color:var(--warn);font-size:11px;}
+.stars-dim{color:rgba(255,176,0,0.25);}
+/* ─── MONTH CHART ─── */
+.chart-wrap{position:relative;width:100%;height:160px;}
+.chart-wrap-lg{position:relative;width:100%;height:200px;}
+/* ─── PROGRESS ─── */
+.prog-wrap{margin-bottom:8px;}
+.prog-label{display:flex;justify-content:space-between;font-size:10px;color:var(--gr);margin-bottom:3px;}
+.prog-label span{color:var(--cb);}
+.prog-track{height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s;}
+/* ─── NOTIF ─── */
+.notif{background:rgba(0,200,120,0.1);border:0.5px solid rgba(0,200,120,0.3);border-radius:8px;padding:8px 14px;font-size:11px;color:var(--ok);margin-bottom:12px;display:none;}
+.notif.show{display:block;}
+/* ─── EDIT FORM ─── */
+.form-section{background:var(--dk);border-radius:10px;padding:16px;border:0.5px solid var(--brd);margin-bottom:10px;}
+.form-title{font-size:12px;font-weight:600;color:#fff;margin-bottom:12px;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.ff{display:flex;flex-direction:column;gap:4px;}
+.fl{font-size:10px;color:var(--gr);}
+.fi{background:rgba(255,255,255,0.06);border:0.5px solid rgba(0,184,217,0.25);border-radius:6px;padding:7px 10px;color:#fff;font-size:12px;font-family:inherit;direction:rtl;width:100%;}
+.fi:focus{outline:none;border-color:var(--cy);}
+select.fi option{background:var(--dk);}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;}
+.btn-save{background:var(--cy);color:var(--dk);border:none;border-radius:20px;padding:7px 22px;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-save:hover{opacity:.9;}
+.btn-cancel{background:transparent;color:var(--gr);border:0.5px solid rgba(255,255,255,0.15);border-radius:20px;padding:7px 16px;font-size:12px;cursor:pointer;}
+/* ─── DIVIDER ─── */
+.divider{height:0.5px;background:rgba(255,255,255,0.07);margin:10px 0;}
+/* ─── SECTION HEADER ─── */
+.sec-hdr{font-size:11px;color:var(--cy);margin-bottom:7px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+/* ─── FOOTER ─── */
+.footer{background:var(--dk);padding:9px 20px;border-top:0.5px solid var(--brd);text-align:center;}
+.footer-txt{font-size:10px;color:var(--gr);}
+.footer-name{color:var(--cy);font-weight:600;}
+/* ─── RESPONSIVE ─── */
+@media(max-width:600px){
+  .g2,.g3,.g4,.fg{grid-template-columns:1fr;}
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="login-screen" style="position:fixed;inset:0;background:#0D1B2E;display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#0F2744;border:0.5px solid rgba(0,184,217,0.3);border-radius:16px;padding:40px 36px;width:320px;text-align:center;">
+    <!-- Logo -->
+    <svg width="48" height="48" viewBox="0 0 44 44" fill="none" style="margin-bottom:12px;">
+      <polygon points="22,4 36,12 36,24 22,32 8,24 8,12" fill="none" stroke="#00B8D9" stroke-width="2.2"/>
+      <polygon points="22,10 32,16 32,24 22,30 12,24 12,16" fill="rgba(0,184,217,0.15)" stroke="#5DD6EE" stroke-width="1.3"/>
+      <polygon points="22,34 32,28 32,36 22,42 12,36 12,28" fill="none" stroke="#00B8D9" stroke-width="1.6"/>
+    </svg>
+    <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">موصول العُلا</div>
+    <div style="font-size:11px;color:#00B8D9;letter-spacing:3px;margin-bottom:28px;">MAWSOOL AL-ULA</div>
+
+    <div style="font-size:12px;color:#8BA3BC;margin-bottom:16px;">أدخل كلمة المرور للدخول</div>
+
+    <input id="pw-input" type="password" placeholder="كلمة المرور"
+      style="width:100%;background:rgba(255,255,255,0.06);border:0.5px solid rgba(0,184,217,0.3);border-radius:8px;
+             padding:11px 14px;color:#fff;font-size:14px;font-family:inherit;direction:rtl;margin-bottom:10px;outline:none;"
+      onkeydown="if(event.key==='Enter')checkPassword()"
+      onfocus="this.style.borderColor='#00B8D9'" onblur="this.style.borderColor='rgba(0,184,217,0.3)'">
+
+    <div id="pw-error" style="font-size:11px;color:#F97068;margin-bottom:10px;min-height:16px;"></div>
+
+    <button onclick="checkPassword()"
+      style="width:100%;background:#00B8D9;color:#0D1B2E;border:none;border-radius:8px;
+             padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+      دخول ←
+    </button>
+
+    <div style="font-size:10px;color:#5D7A94;margin-top:20px;">
+      مستودع الأدوية · مستشفى العُلا
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN CONTENT (hidden until login) ═══════════════ -->
+<div id="main-content" style="display:none;">
+
+<!-- ═══════════════ HEADER BANNER ═══════════════ -->
+<div style="background:#0D1B2E;padding:18px 24px 14px;border-bottom:1px solid rgba(0,184,217,0.2);text-align:center;">
+  <div style="font-size:28px;font-weight:700;color:#FFFFFF;letter-spacing:2px;">موصول العُلا</div>
+  <div style="font-size:12px;color:#00B8D9;letter-spacing:4px;margin-top:3px;">MAWSOOL AL-ULA</div>
+  <div style="width:60px;height:2px;background:linear-gradient(90deg,transparent,#00B8D9,transparent);margin:10px auto 0;"></div>
+</div>
+
+<!-- ═══════════════ TOP BAR ═══════════════ -->
+<div class="topbar">
+  <div class="logo">
+    <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
+      <polygon points="22,4 36,12 36,24 22,32 8,24 8,12" fill="none" stroke="#00B8D9" stroke-width="2.2"/>
+      <polygon points="22,10 32,16 32,24 22,30 12,24 12,16" fill="rgba(0,184,217,0.15)" stroke="#5DD6EE" stroke-width="1.3"/>
+      <polygon points="22,34 32,28 32,36 22,42 12,36 12,28" fill="none" stroke="#00B8D9" stroke-width="1.6"/>
+      <polygon points="22,30 30,25 30,31 22,36 14,31 14,25" fill="rgba(0,184,217,0.1)" stroke="#5DD6EE" stroke-width="1"/>
+    </svg>
+    <div>
+      <div class="logo-ar">مـوصول</div>
+      <div class="logo-en">mawsool</div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="goPage('main',this)">الرئيسي</button>
+    <button class="nav-btn" onclick="goPage('inventory',this)">المخزون</button>
+    <button class="nav-btn" onclick="goPage('nmsm',this)">NM/SM</button>
+    <button class="nav-btn" onclick="goPage('dispatch',this)">التوزيع</button>
+    <button class="nav-btn" onclick="goPage('employees',this)">الموظفون</button>
+    <button class="nav-btn" onclick="goPage('machines',this)">الآلات والمركبات</button>
+    <button class="nav-btn" onclick="goPage('edit',this)">تعديل البيانات</button>
+  </div>
+  <span class="live">● مباشر</span>
+</div>
+
+<!-- ═══════════════ NOTIFICATION ═══════════════ -->
+<div style="padding:0 16px;">
+  <div class="notif" id="notif">✓ تم تحديث البيانات — الداش الرئيسي يعكس التغييرات الآن</div>
+</div>
+
+<!-- ═══════════════ SYNC STATUS BAR ═══════════════ -->
+<div style="background:var(--dk);border-bottom:0.5px solid var(--brd);padding:7px 20px;display:flex;align-items:center;flex-wrap:wrap;gap:12px;">
+  <button id="sync-all-btn" onclick="fetchAll()" style="font-size:10px;padding:4px 14px;border-radius:20px;background:var(--cyp);border:0.5px solid var(--cy);color:var(--cy);cursor:pointer;font-weight:600;">⟳ تحديث الآن</button>
+  <button onclick="debugNMSM()" style="font-size:10px;padding:4px 10px;border-radius:20px;background:rgba(255,176,0,0.15);border:0.5px solid var(--warn);color:var(--warn);cursor:pointer;">🔍 تشخيص NM/SM</button>
+  <span id="last-sync-time" style="font-size:10px;color:var(--gr);">جاري الاتصال بـ Google Sheets...</span>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;margin-right:auto;">
+    <span style="font-size:9px;color:var(--gr);">📦 <span id="sync-inventory" style="color:var(--gr)">جاري...</span></span>
+    <span style="font-size:9px;color:var(--gr);">🔴 <span id="sync-nmsm" style="color:var(--gr)">جاري...</span></span>
+    <span style="font-size:9px;color:var(--gr);">🚚 <span id="sync-dispatch" style="color:var(--gr)">جاري...</span></span>
+    <span style="font-size:9px;color:var(--gr);">👥 <span id="sync-employees" style="color:var(--gr)">جاري...</span></span>
+    <span style="font-size:9px;color:var(--gr);">⚙️ <span id="sync-machines" style="color:var(--gr)">جاري...</span></span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: MAIN
+════════════════════════════════════════ -->
+<div class="page active" id="page-main">
+
+  <!-- KPIs -->
+  <div class="kpi-grid" style="margin-top:14px;">
+    <div class="kpi" onclick="goPage('inventory',null)">
+      <div class="kpi-label">إجمالي الأصناف</div>
+      <div class="kpi-val" id="mk-items">692</div>
+      <div class="kpi-sub up" id="mk-items-sub">224 غير متحرك · 209 بطيء · 259 نشط</div>
+      <div class="kpi-link">← داش المخزون</div>
+    </div>
+    <div class="kpi" onclick="goPage('dispatch',null)">
+      <div class="kpi-label">طلبات التوزيع — 2026</div>
+      <div class="kpi-val" id="mk-orders">747</div>
+      <div class="kpi-sub" id="mk-orders-sub">308 العُلا · 439 المدينة</div>
+      <div class="kpi-link">← داش التوزيع</div>
+    </div>
+    <div class="kpi" onclick="goPage('nmsm',null)">
+      <div class="kpi-label">أصناف غير متحركة</div>
+      <div class="kpi-val dn" id="mk-nm">224</div>
+      <div class="kpi-sub dn" id="mk-nm-sub">مخزون: 200,045 وحدة بدون حركة</div>
+      <div class="kpi-link">← داش NM/SM</div>
+    </div>
+    <div class="kpi" onclick="goPage('employees',null)">
+      <div class="kpi-label">متوسط تقييم الموظفين</div>
+      <div class="kpi-val wr" id="mk-emp">88.5</div>
+      <div class="kpi-sub" id="mk-emp-sub">9 ممتاز · 11 جيد جداً · من 20</div>
+      <div class="kpi-link">← داش الموظفين</div>
+    </div>
+    <div class="kpi" onclick="goPage('nmsm',null)">
+      <div class="kpi-label">أصناف بطيئة الحركة</div>
+      <div class="kpi-val wr" id="mk-sm">209</div>
+      <div class="kpi-sub wr">مخزون: 735,948 وحدة</div>
+      <div class="kpi-link">← داش NM/SM</div>
+    </div>
+    <div class="kpi" onclick="goPage('dispatch',null)">
+      <div class="kpi-label">رحلات التوصيل — 2026</div>
+      <div class="kpi-val up" id="mk-trips">1,611</div>
+      <div class="kpi-sub">928 العُلا · 683 المدينة</div>
+      <div class="kpi-link">← داش التوزيع</div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="sumcard inv" onclick="goPage('inventory',null)">
+      <div class="sumcard-icon">📦</div>
+      <div class="sumcard-title">داش المخزون</div>
+      <div class="sumcard-stat">إجمالي الأصناف: <span id="sc-items">692</span></div>
+      <div class="sumcard-stat">الأصناف النشطة: <span id="sc-active">259</span></div>
+      <div class="sumcard-stat">المستودع: <span>W2D50412 - MOHD2D-PAA</span></div>
+      <button class="sumcard-btn" onclick="event.stopPropagation();goPage('inventory',null)">فتح الداش ←</button>
+    </div>
+    <div class="sumcard nm" onclick="goPage('nmsm',null)">
+      <div class="sumcard-icon">🔴</div>
+      <div class="sumcard-title">داش NM/SM</div>
+      <div class="sumcard-stat">غير متحركة: <span id="sc-nm" style="color:var(--danger)">224</span></div>
+      <div class="sumcard-stat">بطيئة: <span id="sc-sm" style="color:var(--warn)">209</span></div>
+      <div class="sumcard-stat">الفترة: <span>Oct 2025 → Mar 2026</span></div>
+      <button class="sumcard-btn" onclick="event.stopPropagation();goPage('nmsm',null)">فتح الداش ←</button>
+    </div>
+    <div class="sumcard disp" onclick="goPage('dispatch',null)">
+      <div class="sumcard-icon">🚚</div>
+      <div class="sumcard-title">داش التوزيع</div>
+      <div class="sumcard-stat">طلبات 2026: <span id="sc-orders">747</span></div>
+      <div class="sumcard-stat">طلبات طارئة: <span id="sc-emerg" style="color:var(--warn)">11</span></div>
+      <div class="sumcard-stat">إجمالي الوحدات: <span>1,185,126</span></div>
+      <button class="sumcard-btn" onclick="event.stopPropagation();goPage('dispatch',null)">فتح الداش ←</button>
+    </div>
+    <div class="sumcard emp" onclick="goPage('employees',null)">
+      <div class="sumcard-icon">👥</div>
+      <div class="sumcard-title">داش الموظفين</div>
+      <div class="sumcard-stat">إجمالي الموظفين: <span id="sc-emps">20</span></div>
+      <div class="sumcard-stat">متوسط الدرجة: <span id="sc-avg" style="color:var(--ok)">88.5</span></div>
+      <div class="sumcard-stat">الشهر: <span>فبراير 2026</span></div>
+      <button class="sumcard-btn" onclick="event.stopPropagation();goPage('employees',null)">فتح الداش ←</button>
+    </div>
+    <div class="sumcard" onclick="goPage('machines',null)" style="border-top:2px solid var(--cyl);border-radius:12px;">
+      <div class="sumcard-icon">⚙️</div>
+      <div class="sumcard-title">الآلات والمركبات</div>
+      <div class="sumcard-stat">معدل التشغيل: <span id="sc-mach-rate" style="color:var(--ok)">78%</span></div>
+      <div class="sumcard-stat">صيانة قادمة: <span id="sc-mach-maint" style="color:var(--warn)">2 وحدة</span></div>
+      <div class="sumcard-stat">متأخرة عن الصيانة: <span id="sc-mach-overdue" style="color:var(--danger)">1 وحدة</span></div>
+      <button class="sumcard-btn" onclick="event.stopPropagation();goPage('machines',null)">فتح الداش ←</button>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">تطور طلبات التوزيع <span class="card-link" onclick="goPage('dispatch',null)">التفاصيل →</span></div>
+      <div class="chart-wrap-lg"><canvas id="dispChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">توزيع الأصناف <span class="card-link" onclick="goPage('nmsm',null)">التفاصيل →</span></div>
+      <div style="position:relative;width:100%;height:130px;"><canvas id="nmChart"></canvas></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;text-align:center;">
+        <div><div style="font-size:16px;font-weight:700;color:var(--ok)" id="pct-active">37%</div><div style="font-size:9px;color:var(--gr)">نشطة</div></div>
+        <div><div style="font-size:16px;font-weight:700;color:var(--warn)" id="pct-sm">30%</div><div style="font-size:9px;color:var(--gr)">بطيئة</div></div>
+        <div><div style="font-size:16px;font-weight:700;color:var(--danger)" id="pct-nm">32%</div><div style="font-size:9px;color:var(--gr)">غير متحركة</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top employees + delivery summary -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">أفضل الموظفين — فبراير 2026 <span class="card-link" onclick="goPage('employees',null)">الكل →</span></div>
+      <div class="emp-row">
+        <div class="emp-av" style="background:rgba(0,184,217,0.2);color:var(--cy)">BJ</div>
+        <div style="flex:1"><div class="emp-name">BIBEK JARGA MAGAR</div><div class="emp-role">Data Entry</div></div>
+        <div style="text-align:left"><div style="font-size:16px;font-weight:700;color:var(--ok)">97</div><div class="stars">★★★★★</div></div>
+      </div>
+      <div class="emp-row">
+        <div class="emp-av" style="background:rgba(0,200,120,0.15);color:var(--ok)">SA</div>
+        <div style="flex:1"><div class="emp-name">Shahad Al-Johani</div><div class="emp-role">Data Entry</div></div>
+        <div style="text-align:left"><div style="font-size:16px;font-weight:700;color:var(--ok)">94</div><div class="stars">★★★★★</div></div>
+      </div>
+      <div class="emp-row">
+        <div class="emp-av" style="background:rgba(255,176,0,0.15);color:var(--warn)">SK</div>
+        <div style="flex:1"><div class="emp-name">SOHEL MD KALAM AKON</div><div class="emp-role">Order Picker</div></div>
+        <div style="text-align:left"><div style="font-size:16px;font-weight:700;color:var(--ok)">94</div><div class="stars">★★★★★</div></div>
+      </div>
+      <div class="emp-row">
+        <div class="emp-av" style="background:rgba(0,184,217,0.15);color:var(--cyl)">AA</div>
+        <div style="flex:1"><div class="emp-name">Abdulkareem Alef din</div><div class="emp-role">Driver</div></div>
+        <div style="text-align:left"><div style="font-size:16px;font-weight:700;color:var(--cy)">93</div><div class="stars">★★★★★</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">ملخص التوصيلات الأخيرة <span class="card-link" onclick="goPage('dispatch',null)">الأرشيف →</span></div>
+      <table class="tbl">
+        <thead><tr><th>الجهة</th><th>العائلة</th><th style="text-align:left">الحالة</th></tr></thead>
+        <tbody>
+          <tr><td>Pharmacy</td><td>TBCAP</td><td><span class="badge b-green">تم التوصيل</span></td></tr>
+          <tr><td>Emergency Dept</td><td>HOSPC</td><td><span class="badge b-green">تم التوصيل</span></td></tr>
+          <tr><td>Prince Abd Almohsen</td><td>Pharmaceuticals</td><td><span class="badge b-green">تم التوصيل</span></td></tr>
+          <tr><td>male Surgery ward</td><td>Medical Supplies</td><td><span class="badge b-green">تم التوصيل</span></td></tr>
+          <tr><td>ICU</td><td>General</td><td><span class="badge b-blue">قيد التوصيل</span></td></tr>
+          <tr><td>Al-Atheeb HC</td><td>Laboratory</td><td><span class="badge b-yellow">مجدول</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div><!-- /page-main -->
+
+<!-- ════════════════════════════════════════
+     PAGE: INVENTORY
+════════════════════════════════════════ -->
+<div class="page" id="page-inventory">
+  <!-- KPIs Row 1 -->
+  <div class="kpi-grid" style="margin-top:14px;">
+    <div class="kpi"><div class="kpi-label">إجمالي الأصناف</div><div class="kpi-val" id="ik-total">1,009</div><div class="kpi-sub up">المستودع W2D50412</div></div>
+    <div class="kpi"><div class="kpi-label">إجمالي الكمية</div><div class="kpi-val" id="ik-qty">—</div><div class="kpi-sub">وحدة في المخزون</div></div>
+    <div class="kpi"><div class="kpi-label">كمية متاحة</div><div class="kpi-val up" id="ik-avail">—</div><div class="kpi-sub">Available Qty</div></div>
+    <div class="kpi"><div class="kpi-label">عدد المواقع</div><div class="kpi-val" id="ik-locs">—</div><div class="kpi-sub">Location</div></div>
+  </div>
+  <!-- KPIs Row 2 — Expiry -->
+  <div class="kpi-grid" style="margin-top:8px;">
+    <div class="kpi" style="border-color:var(--danger)"><div class="kpi-label">🔴 منتهية الصلاحية</div><div class="kpi-val wr" id="ik-expired">0</div><div class="kpi-sub">Expired</div></div>
+    <div class="kpi" style="border-color:var(--warn)"><div class="kpi-label">🟠 تنتهي خلال شهر</div><div class="kpi-val wr" id="ik-exp1m">—</div><div class="kpi-sub">Exp &lt; 30 days</div></div>
+    <div class="kpi" style="border-color:var(--warn)"><div class="kpi-label">⚠ تنتهي خلال 3 أشهر</div><div class="kpi-val wr" id="ik-exp3m">74</div><div class="kpi-sub">Exp &lt; 3 months</div></div>
+    <div class="kpi" style="border-color:#FFB000"><div class="kpi-label">🟡 تنتهي خلال 6 أشهر</div><div class="kpi-val" id="ik-exp6m">178</div><div class="kpi-sub">Exp &lt; 6 months</div></div>
+  </div>
+  <div class="g2" style="margin-top:12px;">
+    <!-- Aging Profile -->
+    <div class="card">
+      <div class="card-title">توزيع حسب ملف التقادم | Aging Profile</div>
+      <div class="divider" style="margin-top:0;"></div>
+      <div class="bar-row"><div class="bar-name" style="width:90px">PHARMA-30</div><div class="bar-track"><div class="bar-fill" id="inv-bar-pharma" style="width:42%;background:var(--cy);"></div></div><div class="bar-val" id="inv-n-pharma">420</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:90px">MEDICAL-30</div><div class="bar-track"><div class="bar-fill" id="inv-bar-medical" style="width:36%;background:var(--cyl);"></div></div><div class="bar-val" id="inv-n-medical">360</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:90px">LAB-1</div><div class="bar-track"><div class="bar-fill" id="inv-bar-lab" style="width:11%;background:var(--warn);"></div></div><div class="bar-val" id="inv-n-lab">113</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:90px">NUPCO1</div><div class="bar-track"><div class="bar-fill" id="inv-bar-nupco" style="width:11%;background:var(--danger);"></div></div><div class="bar-val" id="inv-n-nupco">112</div></div>
+      <div class="divider"></div>
+      <div class="sec-hdr">حالة الصلاحية | Expiry Status</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+        <div style="flex:1;min-width:80px;background:rgba(249,112,104,0.15);border:0.5px solid var(--danger);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);">منتهية</div>
+          <div style="font-size:22px;font-weight:700;color:var(--danger);" id="ik-exp-d0">0</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:rgba(255,176,0,0.15);border:0.5px solid var(--warn);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);">&lt; 3 أشهر</div>
+          <div style="font-size:22px;font-weight:700;color:var(--warn);" id="ik-exp-d3">74</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:rgba(0,184,217,0.1);border:0.5px solid var(--cy);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);">&lt; 6 أشهر</div>
+          <div style="font-size:22px;font-weight:700;color:var(--cy);" id="ik-exp-d6">178</div>
+        </div>
+      </div>
+    </div>
+    <!-- Near Expiry Table -->
+    <div class="card">
+      <div class="card-title">⚠ أقرب الأصناف انتهاءً | Nearest Expiry</div>
+      <div class="divider" style="margin-top:0;"></div>
+      <div style="overflow-x:auto;">
+        <table class="tbl" id="inv-expiry-tbl">
+          <thead><tr>
+            <th>Item No</th>
+            <th style="text-align:right">الوصف</th>
+            <th>BBD</th>
+            <th>الأيام</th>
+            <th>اللوكيشن</th>
+          </tr></thead>
+          <tbody id="inv-expiry-body">
+            <tr><td colspan="5" style="text-align:center;color:var(--gr);">جاري التحميل من Google Sheets...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- Location Summary -->
+  <div class="card gfull" style="margin-top:12px;">
+    <div class="card-title">📍 ملخص حسب ملف التقادم | Summary by Aging Profile</div>
+    <div class="divider" style="margin-top:0;"></div>
+    <table class="tbl" id="inv-aging-tbl">
+      <thead><tr>
+        <th>ملف التقادم</th>
+        <th>إجمالي الأصناف</th>
+        <th>إجمالي الكمية</th>
+        <th>كمية متاحة</th>
+        <th>قريبة الانتهاء &lt;3م</th>
+        <th>الحالة</th>
+      </tr></thead>
+      <tbody id="inv-aging-body">
+        <tr><td>PHARMA-30</td><td>420</td><td>—</td><td>—</td><td id="inv-ap-pharma-exp">—</td><td><span class="badge b-green">✅ جيد</span></td></tr>
+        <tr><td>MEDICAL-30</td><td>360</td><td>—</td><td>—</td><td id="inv-ap-medical-exp">—</td><td><span class="badge b-green">✅ جيد</span></td></tr>
+        <tr><td>LAB-1</td><td>113</td><td>—</td><td>—</td><td id="inv-ap-lab-exp">—</td><td><span class="badge b-yellow">⚠ متابعة</span></td></tr>
+        <tr><td>NUPCO1</td><td>112</td><td>—</td><td>—</td><td id="inv-ap-nupco-exp">—</td><td><span class="badge b-green">✅ جيد</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div><!-- /page-inventory -->
+
+<!-- ════════════════════════════════════════
+     PAGE: NM/SM
+════════════════════════════════════════ -->
+<div class="page" id="page-nmsm">
+  <div class="kpi-grid" style="margin-top:14px;">
+    <div class="kpi"><div class="kpi-label">غير متحركة 🔴</div><div class="kpi-val dn" id="nk-nm">224</div><div class="kpi-sub dn" id="nk-nm-sub">200,045 وحدة مجمّدة</div></div>
+    <div class="kpi"><div class="kpi-label">بطيئة الحركة 🟡</div><div class="kpi-val wr" id="nk-sm">209</div><div class="kpi-sub wr" id="nk-sm-sub">حركة منخفضة</div></div>
+    <div class="kpi"><div class="kpi-label">نشطة 🟢</div><div class="kpi-val up" id="nk-ac">259</div><div class="kpi-sub up" id="nk-ac-sub">حركة جيدة</div></div>
+    <div class="kpi"><div class="kpi-label">آخر تقرير</div><div class="kpi-val" style="font-size:15px" id="nk-date">2 مارس</div><div class="kpi-sub" id="nk-period">Oct 2025 → Mar 2026</div></div>
+  </div>
+  <div class="g2" style="margin-top:12px;">
+    <div class="card">
+      <div class="card-title">🔴 أصناف غير المتحركة | Non-Moving</div>
+      <div class="divider" style="margin-top:0;"></div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr><th>رقم الصنف</th><th style="text-align:right">الوصف</th><th>الكمية</th><th>الملف</th></tr></thead>
+          <tbody id="nmsm-nm-body">
+            <tr><td colspan="4" style="text-align:center;color:var(--gr)">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🟡 أصناف بطيئة الحركة | Slow-Moving</div>
+      <div class="divider" style="margin-top:0;"></div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr><th>رقم الصنف</th><th style="text-align:right">الوصف</th><th>الكمية</th><th>آخر صرف</th></tr></thead>
+          <tbody id="nmsm-sm-body">
+            <tr><td colspan="4" style="text-align:center;color:var(--gr)">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="g2" style="margin-top:12px;">
+    <div class="card">
+      <div class="card-title">نسبة الأصناف | Distribution</div>
+      <div style="position:relative;width:100%;height:190px;"><canvas id="nmStockChart"></canvas></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-top:10px;">
+        <div><div style="font-size:16px;font-weight:700;color:var(--ok)" id="nk-pct-ac">—</div><div style="font-size:9px;color:var(--gr)">نشطة</div></div>
+        <div><div style="font-size:16px;font-weight:700;color:var(--warn)" id="nk-pct-sm">—</div><div style="font-size:9px;color:var(--gr)">بطيئة</div></div>
+        <div><div style="font-size:16px;font-weight:700;color:var(--danger)" id="nk-pct-nm">—</div><div style="font-size:9px;color:var(--gr)">غير متحركة</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">كميات المخزون الراكد</div>
+      <div class="divider" style="margin-top:0;"></div>
+      <div style="text-align:center;padding:18px 0;">
+        <div style="font-size:11px;color:var(--gr);margin-bottom:4px;">إجمالي الكمية المجمّدة</div>
+        <div style="font-size:36px;font-weight:700;color:var(--danger)" id="nk-nmqty">200,045</div>
+        <div style="font-size:10px;color:var(--gr);margin-top:4px;">وحدة بدون حركة</div>
+      </div>
+      <div class="divider"></div>
+      <div style="text-align:center;padding:10px 0;">
+        <div style="font-size:11px;color:var(--gr);margin-bottom:4px;">كمية بطيئة الحركة</div>
+        <div style="font-size:28px;font-weight:700;color:var(--warn)" id="nk-smqty">735,948</div>
+        <div style="font-size:10px;color:var(--gr);margin-top:4px;">وحدة — توزيع منخفض</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /page-nmsm -->
+
+<!-- ════════════════════════════════════════
+     PAGE: DISPATCH
+════════════════════════════════════════ -->
+<div class="page" id="page-dispatch">
+  <div class="kpi-grid" style="margin-top:14px;">
+    <div class="kpi"><div class="kpi-label">طلبات فبراير 2026</div><div class="kpi-val" id="dk-feb">747</div><div class="kpi-sub">736 مخطط + 11 طارئ</div></div>
+    <div class="kpi"><div class="kpi-label">طلبات مستشفى العُلا</div><div class="kpi-val up" id="dk-alula">308</div><div class="kpi-sub">297 عادي + 11 طارئ</div></div>
+    <div class="kpi"><div class="kpi-label">طلبات المدينة</div><div class="kpi-val" id="dk-mad">439</div><div class="kpi-sub">439 عادي + 0 طارئ</div></div>
+    <div class="kpi"><div class="kpi-label">رحلات التوصيل 2026</div><div class="kpi-val wr" id="dk-trips">1,611</div><div class="kpi-sub">928 العُلا · 683 المدينة</div></div>
+    <div class="kpi"><div class="kpi-label">إجمالي الوحدات</div><div class="kpi-val" id="dk-units">1,185,126</div><div class="kpi-sub">2026 حتى الآن</div></div>
+    <div class="kpi"><div class="kpi-label">طلبات عاجلة (Rush)</div><div class="kpi-val dn" id="dk-rush">15</div><div class="kpi-sub dn">منذ Oct 2025</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">تطور الطلبات الشهرية</div>
+      <div class="chart-wrap-lg"><canvas id="dispDetailChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">توزيع الطلبات حسب الجهة</div>
+      <div style="position:relative;width:100%;height:170px;"><canvas id="destChart"></canvas></div>
+      <div class="divider"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+        <div style="text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--cy)">41%</div><div style="font-size:9px;color:var(--gr)">مستشفى العُلا</div></div>
+        <div style="text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--warn)">59%</div><div style="font-size:9px;color:var(--gr)">طلبات المدينة</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card gfull">
+    <div class="card-title">أرشيف التوصيلات الأخيرة — مارس 2026</div>
+    <table class="tbl">
+      <thead><tr><th>رقم الطلب</th><th>المستلِم</th><th>العائلة</th><th style="text-align:left">الكمية</th><th style="text-align:left">الشاحنة</th><th style="text-align:left">الحالة</th></tr></thead>
+      <tbody>
+        <tr><td>004-832-188</td><td>Pharmacy</td><td>TBCAP</td><td>750</td><td>—</td><td><span class="badge b-green">تم</span></td></tr>
+        <tr><td>004-829-597</td><td>male Surgery ward</td><td>HOSPC/SOLU</td><td>250</td><td>—</td><td><span class="badge b-green">تم</span></td></tr>
+        <tr><td>004-836-xxx</td><td>Emergency Dept</td><td>Pharmaceuticals</td><td>—</td><td>—</td><td><span class="badge b-blue">قيد التوزيع</span></td></tr>
+        <tr><td>004-840-xxx</td><td>Prince Abd Almohsen</td><td>Medical Supplies</td><td>—</td><td>—</td><td><span class="badge b-yellow">مجدول</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">أكثر الجهات استلاماً</div>
+      <div class="bar-row"><div class="bar-name" style="width:130px">Prince Abd Almohsen H.</div><div class="bar-track"><div class="bar-fill" style="width:42%;background:var(--cy);"></div></div><div class="bar-val">21</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:130px">Pharmacy</div><div class="bar-track"><div class="bar-fill" style="width:24%;background:var(--cyl);"></div></div><div class="bar-val">12</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:130px">Emergency Department</div><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--warn);"></div></div><div class="bar-val">5</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:130px">male Surgery ward</div><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--warn);"></div></div><div class="bar-val">5</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:130px">Al-Atheeb Health Center</div><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--warn);"></div></div><div class="bar-val">5</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:130px">Nursery</div><div class="bar-track"><div class="bar-fill" style="width:8%;background:var(--ok);"></div></div><div class="bar-val">4</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">عائلات الأصناف الموزّعة</div>
+      <div class="bar-row"><div class="bar-name" style="width:110px">General</div><div class="bar-track"><div class="bar-fill" style="width:46%;background:var(--cy);"></div></div><div class="bar-val">23</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:110px">HOSPC</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:var(--cyl);"></div></div><div class="bar-val">11</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:110px">Medical Supplies</div><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--warn);"></div></div><div class="bar-val">10</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:110px">Pharmaceuticals</div><div class="bar-track"><div class="bar-fill" style="width:18%;background:var(--ok);"></div></div><div class="bar-val">9</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:110px">TBCAP</div><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--danger);"></div></div><div class="bar-val">5</div></div>
+      <div class="bar-row"><div class="bar-name" style="width:110px">BI-CH</div><div class="bar-track"><div class="bar-fill" style="width:8%;background:var(--gr);"></div></div><div class="bar-val">4</div></div>
+    </div>
+  </div>
+</div><!-- /page-dispatch -->
+
+<!-- ════════════════════════════════════════
+     PAGE: EMPLOYEES
+════════════════════════════════════════ -->
+<div class="page" id="page-employees">
+  <div class="kpi-grid" style="margin-top:14px;">
+    <div class="kpi"><div class="kpi-label">إجمالي الموظفين</div><div class="kpi-val" id="ek-total">20</div><div class="kpi-sub">فبراير 2026</div></div>
+    <div class="kpi"><div class="kpi-label">متوسط الدرجة</div><div class="kpi-val up" id="ek-avg">88.5</div><div class="kpi-sub">من 100</div></div>
+    <div class="kpi"><div class="kpi-label">ممتاز ⭐</div><div class="kpi-val up" id="ek-exc">9</div><div class="kpi-sub">درجة ≥ 90</div></div>
+    <div class="kpi"><div class="kpi-label">جيد جداً ✅</div><div class="kpi-val wr" id="ek-good">11</div><div class="kpi-sub">درجة 80-89</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">جميع الموظفين — فبراير 2026</div>
+      <table class="tbl" id="empTable">
+        <thead><tr><th>الاسم</th><th>الوظيفة</th><th style="text-align:left">الدرجة</th><th style="text-align:left">التقييم</th></tr></thead>
+        <tbody id="empTbody"></tbody>
+      </table>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:10px;">
+        <div class="card-title">متوسط الدرجة حسب الوظيفة</div>
+        <div class="chart-wrap"><canvas id="roleChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">توزيع التقييمات</div>
+        <div style="position:relative;width:100%;height:100px;"><canvas id="empDistChart"></canvas></div>
+        <div style="display:flex;gap:16px;margin-top:8px;justify-content:center;">
+          <div style="text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--ok)">9</div><div style="font-size:9px;color:var(--gr)">ممتاز</div></div>
+          <div style="text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--warn)">11</div><div style="font-size:9px;color:var(--gr)">جيد جداً</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /page-employees -->
+
+<!-- ════════════════════════════════════════
+     PAGE: MACHINES
+════════════════════════════════════════ -->
+<div class="page" id="page-machines">
+  <!-- KPIs -->
+  <div class="kpi-grid" style="margin-top:14px;">
+    <div class="kpi"><div class="kpi-label">إجمالي الوحدات</div><div class="kpi-val">4</div><div class="kpi-sub">شاحنتان + رافعة + آلة تنظيف</div></div>
+    <div class="kpi"><div class="kpi-label">متوسط التشغيل اليومي</div><div class="kpi-val up" id="mk-avgrun">78%</div><div class="kpi-sub">من أقصى ساعات التشغيل</div></div>
+    <div class="kpi"><div class="kpi-label">صيانة قادمة</div><div class="kpi-val wr" id="mk-maint-soon">2</div><div class="kpi-sub wr">خلال 30 يوماً</div></div>
+    <div class="kpi"><div class="kpi-label">متأخرة عن الصيانة</div><div class="kpi-val dn" id="mk-overdue">1</div><div class="kpi-sub dn">تجاوزت الموعد المقرر</div></div>
+  </div>
+
+  <!-- Machine cards grid -->
+  <div class="g2" id="machineCardsGrid">
+    <!-- Truck 1 -->
+    <div class="card" id="mcard-0">
+      <div class="card-title" style="font-size:12px;">
+        <span>🚛 10-Ton Refrigerated Truck</span>
+        <span class="badge b-green" id="mstatus-0">تشغيل</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);margin-bottom:4px;">ساعات التشغيل اليوم</div>
+          <div style="font-size:24px;font-weight:700;color:var(--cy)" id="mhours-0">7.5</div>
+          <div style="font-size:9px;color:var(--gr)">من أصل 10 ساعات</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);margin-bottom:4px;">معدل التشغيل</div>
+          <div style="font-size:24px;font-weight:700;color:var(--ok)" id="mrate-0">75%</div>
+          <div style="font-size:9px;color:var(--gr)">هذا الشهر</div>
+        </div>
+      </div>
+      <!-- Usage bar -->
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gr);margin-bottom:4px;"><span>ساعات التشغيل اليوم</span><span id="mbar-lbl-0">7.5 / 10 س</span></div>
+        <div class="prog-track"><div class="prog-fill" id="mbar-0" style="width:75%;background:var(--ok);"></div></div>
+      </div>
+      <div class="divider"></div>
+      <!-- Maintenance -->
+      <div style="font-size:10px;color:var(--gr);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">الصيانة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;">
+        <div><div style="color:var(--gr);font-size:9px;">آخر صيانة</div><div style="color:#fff;font-weight:600;" id="mlast-0">10 فبراير 2026</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">الصيانة القادمة</div><div style="font-weight:600;" id="mnext-0">10 أبريل 2026</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">نوع الصيانة</div><div style="color:var(--cy);font-weight:600;">صيانة دورية</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">الحالة</div><div id="maintstat-0"><span class="badge b-green">في الموعد</span></div></div>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:9px;color:var(--gr);margin-bottom:4px;">الأيام حتى الصيانة القادمة</div>
+        <div class="prog-track"><div class="prog-fill" id="mdaysbar-0" style="width:85%;background:var(--ok);"></div></div>
+        <div style="font-size:10px;color:var(--ok);margin-top:3px;" id="mdayslbl-0">28 يوم متبقي</div>
+      </div>
+    </div>
+
+    <!-- Truck 2 -->
+    <div class="card" id="mcard-1">
+      <div class="card-title" style="font-size:12px;">
+        <span>🚛 5-Ton Refrigerated Truck 2</span>
+        <span class="badge b-green" id="mstatus-1">تشغيل</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);margin-bottom:4px;">ساعات التشغيل اليوم</div>
+          <div style="font-size:24px;font-weight:700;color:var(--cy)" id="mhours-1">8.0</div>
+          <div style="font-size:9px;color:var(--gr)">من أصل 10 ساعات</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);margin-bottom:4px;">معدل التشغيل</div>
+          <div style="font-size:24px;font-weight:700;color:var(--ok)" id="mrate-1">80%</div>
+          <div style="font-size:9px;color:var(--gr)">هذا الشهر</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gr);margin-bottom:4px;"><span>ساعات التشغيل اليوم</span><span id="mbar-lbl-1">8.0 / 10 س</span></div>
+        <div class="prog-track"><div class="prog-fill" id="mbar-1" style="width:80%;background:var(--ok);"></div></div>
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:10px;color:var(--gr);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">الصيانة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;">
+        <div><div style="color:var(--gr);font-size:9px;">آخر صيانة</div><div style="color:#fff;font-weight:600;" id="mlast-1">1 مارس 2026</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">الصيانة القادمة</div><div style="font-weight:600;" id="mnext-1">1 مايو 2026</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">نوع الصيانة</div><div style="color:var(--cy);font-weight:600;">صيانة دورية</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">الحالة</div><div id="maintstat-1"><span class="badge b-green">في الموعد</span></div></div>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:9px;color:var(--gr);margin-bottom:4px;">الأيام حتى الصيانة القادمة</div>
+        <div class="prog-track"><div class="prog-fill" id="mdaysbar-1" style="width:95%;background:var(--ok);"></div></div>
+        <div style="font-size:10px;color:var(--ok);margin-top:3px;" id="mdayslbl-1">49 يوم متبقي</div>
+      </div>
+    </div>
+
+    <!-- Reach Truck -->
+    <div class="card" id="mcard-2">
+      <div class="card-title" style="font-size:12px;">
+        <span>🏗️ Reach Truck 2</span>
+        <span class="badge b-yellow" id="mstatus-2">صيانة قريبة</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);margin-bottom:4px;">ساعات التشغيل اليوم</div>
+          <div style="font-size:24px;font-weight:700;color:var(--warn)" id="mhours-2">6.0</div>
+          <div style="font-size:9px;color:var(--gr)">من أصل 8 ساعات</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);margin-bottom:4px;">معدل التشغيل</div>
+          <div style="font-size:24px;font-weight:700;color:var(--warn)" id="mrate-2">75%</div>
+          <div style="font-size:9px;color:var(--gr)">هذا الشهر</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gr);margin-bottom:4px;"><span>ساعات التشغيل اليوم</span><span id="mbar-lbl-2">6.0 / 8 س</span></div>
+        <div class="prog-track"><div class="prog-fill" id="mbar-2" style="width:75%;background:var(--warn);"></div></div>
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:10px;color:var(--gr);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">الصيانة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;">
+        <div><div style="color:var(--gr);font-size:9px;">آخر صيانة</div><div style="color:#fff;font-weight:600;" id="mlast-2">15 يناير 2026</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">الصيانة القادمة</div><div style="font-weight:600;" id="mnext-2">15 مارس 2026</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">نوع الصيانة</div><div style="color:var(--warn);font-weight:600;">فحص شامل</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">الحالة</div><div id="maintstat-2"><span class="badge b-red">متأخرة!</span></div></div>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:9px;color:var(--gr);margin-bottom:4px;">حالة الصيانة</div>
+        <div class="prog-track"><div class="prog-fill" id="mdaysbar-2" style="width:100%;background:var(--danger);"></div></div>
+        <div style="font-size:10px;color:var(--danger);margin-top:3px;" id="mdayslbl-2">⚠ تجاوزت الموعد بـ 2 يوم</div>
+      </div>
+    </div>
+
+    <!-- Cleaning Machine -->
+    <div class="card" id="mcard-3">
+      <div class="card-title" style="font-size:12px;">
+        <span>🧹 Cleaning Machine 1</span>
+        <span class="badge b-green" id="mstatus-3">تشغيل</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);margin-bottom:4px;">ساعات التشغيل اليوم</div>
+          <div style="font-size:24px;font-weight:700;color:var(--cy)" id="mhours-3">4.0</div>
+          <div style="font-size:9px;color:var(--gr)">من أصل 6 ساعات</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--gr);margin-bottom:4px;">معدل التشغيل</div>
+          <div style="font-size:24px;font-weight:700;color:var(--ok)" id="mrate-3">67%</div>
+          <div style="font-size:9px;color:var(--gr)">هذا الشهر</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gr);margin-bottom:4px;"><span>ساعات التشغيل اليوم</span><span id="mbar-lbl-3">4.0 / 6 س</span></div>
+        <div class="prog-track"><div class="prog-fill" id="mbar-3" style="width:67%;background:var(--cy);"></div></div>
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:10px;color:var(--gr);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">الصيانة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;">
+        <div><div style="color:var(--gr);font-size:9px;">آخر صيانة</div><div style="color:#fff;font-weight:600;" id="mlast-3">20 فبراير 2026</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">الصيانة القادمة</div><div style="font-weight:600;" id="mnext-3">20 مارس 2026</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">نوع الصيانة</div><div style="color:var(--cy);font-weight:600;">صيانة خفيفة</div></div>
+        <div><div style="color:var(--gr);font-size:9px;">الحالة</div><div id="maintstat-3"><span class="badge b-yellow">خلال 7 أيام</span></div></div>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:9px;color:var(--gr);margin-bottom:4px;">الأيام حتى الصيانة القادمة</div>
+        <div class="prog-track"><div class="prog-fill" id="mdaysbar-3" style="width:25%;background:var(--warn);"></div></div>
+        <div style="font-size:10px;color:var(--warn);margin-top:3px;" id="mdayslbl-3">7 أيام متبقية</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts: usage over month + maintenance timeline -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">معدل تشغيل الآلات — هذا الشهر</div>
+      <div style="position:relative;width:100%;height:200px;"><canvas id="machUsageChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">جدول الصيانة — 2026</div>
+      <table class="tbl" style="margin-top:4px;">
+        <thead>
+          <tr>
+            <th>الوحدة</th>
+            <th style="text-align:left">آخر صيانة</th>
+            <th style="text-align:left">القادمة</th>
+            <th style="text-align:left">الحالة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-size:10px;font-weight:600;color:#fff;">10-Ton Truck</td>
+            <td>10 فبراير</td>
+            <td>10 أبريل</td>
+            <td><span class="badge b-green">28 يوم</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:10px;font-weight:600;color:#fff;">5-Ton Truck 2</td>
+            <td>1 مارس</td>
+            <td>1 مايو</td>
+            <td><span class="badge b-green">49 يوم</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:10px;font-weight:600;color:#fff;">Reach Truck 2</td>
+            <td>15 يناير</td>
+            <td>15 مارس</td>
+            <td><span class="badge b-red">متأخرة!</span></td>
+          </tr>
+          <tr>
+            <td style="font-size:10px;font-weight:600;color:#fff;">Cleaning Machine</td>
+            <td>20 فبراير</td>
+            <td>20 مارس</td>
+            <td><span class="badge b-yellow">7 أيام</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="divider"></div>
+      <div style="font-size:10px;color:var(--gr);margin-bottom:8px;font-weight:600;">الجدول الزمني للصيانة</div>
+      <!-- Timeline bars -->
+      <div style="position:relative;padding-bottom:8px;">
+        <!-- month ruler -->
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--gr);margin-bottom:6px;padding:0 4px;">
+          <span>مارس</span><span>أبريل</span><span>مايو</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:9px;color:var(--gr);width:70px;text-align:right;">10-Ton</div>
+            <div style="flex:1;height:12px;background:rgba(255,255,255,0.05);border-radius:3px;position:relative;">
+              <div style="position:absolute;right:0%;width:36%;height:100%;background:rgba(0,200,120,0.5);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;">10 أبريل</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:9px;color:var(--gr);width:70px;text-align:right;">5-Ton</div>
+            <div style="flex:1;height:12px;background:rgba(255,255,255,0.05);border-radius:3px;position:relative;">
+              <div style="position:absolute;right:0%;width:70%;height:100%;background:rgba(0,200,120,0.4);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;">1 مايو</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:9px;color:var(--gr);width:70px;text-align:right;">Reach Truck</div>
+            <div style="flex:1;height:12px;background:rgba(255,255,255,0.05);border-radius:3px;position:relative;">
+              <div style="position:absolute;right:0%;width:5%;height:100%;background:rgba(249,112,104,0.8);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;">!</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:9px;color:var(--gr);width:70px;text-align:right;">Cleaning</div>
+            <div style="flex:1;height:12px;background:rgba(255,255,255,0.05);border-radius:3px;position:relative;">
+              <div style="position:absolute;right:0%;width:12%;height:100%;background:rgba(255,176,0,0.7);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;">20 مارس</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit machines button -->
+  <div style="text-align:center;margin:8px 0;">
+    <button class="btn-save" onclick="goPage('edit',null);document.getElementById('edit-section').value='machines';loadEditSection();" style="font-size:11px;padding:7px 20px;">تعديل بيانات الآلات ✏️</button>
+  </div>
+</div><!-- /page-machines -->
+
+<!-- ════════════════════════════════════════
+     PAGE: EDIT
+════════════════════════════════════════ -->
+<div class="page" id="page-edit">
+  <div style="margin-top:14px;">
+  <div class="form-section">
+    <div class="form-title">تحديث مؤشرات الداش الرئيسي</div>
+    <div style="margin-bottom:12px;">
+      <label class="fl" style="display:block;margin-bottom:4px;">اختر القسم للتحديث</label>
+      <select class="fi" id="edit-section" onchange="loadEditSection()">
+        <option value="inventory">📦 المخزون</option>
+        <option value="nmsm">🔴 NM/SM — الأصناف غير المتحركة</option>
+        <option value="dispatch">🚚 التوزيع والتوصيل</option>
+        <option value="employees">👥 الموظفون</option>
+        <option value="machines">⚙️ الآلات والمركبات</option>
+    </div>
+
+    <!-- INVENTORY FIELDS -->
+    <div id="ef-inventory">
+      <div class="fg">
+        <div class="ff"><label class="fl">إجمالي الأصناف</label><input class="fi" type="number" id="ef-total-items" value="692"></div>
+        <div class="ff"><label class="fl">إجمالي الكمية</label><input class="fi" type="number" id="ef-total-qty" value="4392737"></div>
+        <div class="ff"><label class="fl">الأصناف النشطة</label><input class="fi" type="number" id="ef-active" value="259"></div>
+        <div class="ff"><label class="fl">نسبة التوزيع %</label><input class="fi" type="number" id="ef-disp-rate" value="46"></div>
+      </div>
+    </div>
+
+    <!-- NMSM FIELDS -->
+    <div id="ef-nmsm" style="display:none">
+      <div class="fg">
+        <div class="ff"><label class="fl">غير متحركة 🔴</label><input class="fi" type="number" id="ef-nm" value="224"></div>
+        <div class="ff"><label class="fl">بطيئة الحركة 🟡</label><input class="fi" type="number" id="ef-sm" value="209"></div>
+        <div class="ff"><label class="fl">نشطة 🟢</label><input class="fi" type="number" id="ef-ac" value="259"></div>
+        <div class="ff"><label class="fl">مخزون غير متحرك (وحدة)</label><input class="fi" type="number" id="ef-nm-qty" value="200045"></div>
+      </div>
+    </div>
+
+    <!-- DISPATCH FIELDS -->
+    <div id="ef-dispatch" style="display:none">
+      <div class="fg">
+        <div class="ff"><label class="fl">طلبات فبراير</label><input class="fi" type="number" id="ef-feb-orders" value="747"></div>
+        <div class="ff"><label class="fl">طلبات العُلا</label><input class="fi" type="number" id="ef-alula-orders" value="308"></div>
+        <div class="ff"><label class="fl">طلبات المدينة</label><input class="fi" type="number" id="ef-mad-orders" value="439"></div>
+        <div class="ff"><label class="fl">طلبات طارئة</label><input class="fi" type="number" id="ef-emerg" value="11"></div>
+        <div class="ff"><label class="fl">رحلات العُلا</label><input class="fi" type="number" id="ef-alula-trips" value="928"></div>
+        <div class="ff"><label class="fl">رحلات المدينة</label><input class="fi" type="number" id="ef-mad-trips" value="683"></div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEE FIELDS -->
+    <div id="ef-employees" style="display:none">
+      <div class="fg">
+        <div class="ff"><label class="fl">إجمالي الموظفين</label><input class="fi" type="number" id="ef-emp-count" value="20"></div>
+        <div class="ff"><label class="fl">متوسط الدرجة</label><input class="fi" type="number" step="0.1" id="ef-emp-avg" value="88.5"></div>
+        <div class="ff"><label class="fl">عدد الممتازين ⭐</label><input class="fi" type="number" id="ef-emp-exc" value="9"></div>
+        <div class="ff"><label class="fl">عدد جيد جداً ✅</label><input class="fi" type="number" id="ef-emp-good" value="11"></div>
+      </div>
+    </div>
+
+    <!-- MACHINES FIELDS -->
+    <div id="ef-machines" style="display:none">
+      <div style="font-size:11px;color:var(--cy);margin-bottom:10px;font-weight:600;">10-Ton Refrigerated Truck</div>
+      <div class="fg">
+        <div class="ff"><label class="fl">ساعات التشغيل اليوم</label><input class="fi" type="number" step="0.5" id="ef-m0-hours" value="7.5"></div>
+        <div class="ff"><label class="fl">معدل التشغيل الشهري %</label><input class="fi" type="number" id="ef-m0-rate" value="75"></div>
+        <div class="ff"><label class="fl">آخر صيانة</label><input class="fi" type="text" id="ef-m0-last" value="10 فبراير 2026"></div>
+        <div class="ff"><label class="fl">الصيانة القادمة</label><input class="fi" type="text" id="ef-m0-next" value="10 أبريل 2026"></div>
+        <div class="ff"><label class="fl">الأيام المتبقية للصيانة</label><input class="fi" type="number" id="ef-m0-days" value="28"></div>
+        <div class="ff"><label class="fl">الحالة</label>
+          <select class="fi" id="ef-m0-status"><option value="ok">في الموعد</option><option value="soon">قريبة</option><option value="overdue">متأخرة</option></select>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--cy);margin-bottom:10px;font-weight:600;margin-top:4px;">5-Ton Refrigerated Truck 2</div>
+      <div class="fg">
+        <div class="ff"><label class="fl">ساعات التشغيل اليوم</label><input class="fi" type="number" step="0.5" id="ef-m1-hours" value="8.0"></div>
+        <div class="ff"><label class="fl">معدل التشغيل الشهري %</label><input class="fi" type="number" id="ef-m1-rate" value="80"></div>
+        <div class="ff"><label class="fl">آخر صيانة</label><input class="fi" type="text" id="ef-m1-last" value="1 مارس 2026"></div>
+        <div class="ff"><label class="fl">الصيانة القادمة</label><input class="fi" type="text" id="ef-m1-next" value="1 مايو 2026"></div>
+        <div class="ff"><label class="fl">الأيام المتبقية للصيانة</label><input class="fi" type="number" id="ef-m1-days" value="49"></div>
+        <div class="ff"><label class="fl">الحالة</label>
+          <select class="fi" id="ef-m1-status"><option value="ok">في الموعد</option><option value="soon">قريبة</option><option value="overdue">متأخرة</option></select>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--cy);margin-bottom:10px;font-weight:600;margin-top:4px;">Reach Truck 2</div>
+      <div class="fg">
+        <div class="ff"><label class="fl">ساعات التشغيل اليوم</label><input class="fi" type="number" step="0.5" id="ef-m2-hours" value="6.0"></div>
+        <div class="ff"><label class="fl">معدل التشغيل الشهري %</label><input class="fi" type="number" id="ef-m2-rate" value="75"></div>
+        <div class="ff"><label class="fl">آخر صيانة</label><input class="fi" type="text" id="ef-m2-last" value="15 يناير 2026"></div>
+        <div class="ff"><label class="fl">الصيانة القادمة</label><input class="fi" type="text" id="ef-m2-next" value="15 مارس 2026"></div>
+        <div class="ff"><label class="fl">الأيام المتبقية للصيانة</label><input class="fi" type="number" id="ef-m2-days" value="-2"></div>
+        <div class="ff"><label class="fl">الحالة</label>
+          <select class="fi" id="ef-m2-status"><option value="ok">في الموعد</option><option value="soon">قريبة</option><option value="overdue" selected>متأخرة</option></select>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--cy);margin-bottom:10px;font-weight:600;margin-top:4px;">Cleaning Machine 1</div>
+      <div class="fg">
+        <div class="ff"><label class="fl">ساعات التشغيل اليوم</label><input class="fi" type="number" step="0.5" id="ef-m3-hours" value="4.0"></div>
+        <div class="ff"><label class="fl">معدل التشغيل الشهري %</label><input class="fi" type="number" id="ef-m3-rate" value="67"></div>
+        <div class="ff"><label class="fl">آخر صيانة</label><input class="fi" type="text" id="ef-m3-last" value="20 فبراير 2026"></div>
+        <div class="ff"><label class="fl">الصيانة القادمة</label><input class="fi" type="text" id="ef-m3-next" value="20 مارس 2026"></div>
+        <div class="ff"><label class="fl">الأيام المتبقية للصيانة</label><input class="fi" type="number" id="ef-m3-days" value="7"></div>
+        <div class="ff"><label class="fl">الحالة</label>
+          <select class="fi" id="ef-m3-status"><option value="ok">في الموعد</option><option value="soon" selected>قريبة</option><option value="overdue">متأخرة</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="goPage('main',null)">إلغاء</button>
+      <button class="btn-save" onclick="applyEdit()">حفظ وتحديث الداش الرئيسي ✓</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:14px;background:rgba(0,184,217,0.05);">
+    <div class="card-title" style="color:var(--cy);">كيف يعمل النظام؟</div>
+    <div style="font-size:11px;color:var(--gr);line-height:1.9;">
+      1. اختر القسم الذي تريد تحديثه<br>
+      2. عدّل الأرقام حسب البيانات الفعلية<br>
+      3. اضغط <strong style="color:#fff;">"حفظ وتحديث الداش الرئيسي"</strong><br>
+      4. ستنعكس التغييرات فوراً على الداش الرئيسي وبطاقات الملخص<br>
+      5. يمكن تحديث كل قسم بشكل مستقل — القسم الآخر لا يتأثر
+    </div>
+  </div>
+  </div>
+</div><!-- /page-edit -->
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<div class="footer">
+  <div class="footer-txt">تم إنشاؤه بواسطة <span class="footer-name">Dr. Yazeed Alsoamir</span> — QHSE Supervisor &nbsp;|&nbsp; مستودع موصول — العُلا</div>
+</div>
+
+</div><!-- /main-content -->
+
+<script>
+// ─── STATE (real data from files) ───
+var S = {
+  items:692, activeItems:259, nmItems:224, smItems:209,
+  totalQty:4392737, dispQty:2012600, dispRate:46,
+  orders:747, alulaOrders:308, madOrders:439, emergOrders:11,
+  alulaTrips:928, madTrips:683, rushOrders:15,
+  empCount:20, empAvg:88.5, empExc:9, empGood:11,
+  nmQty:200045, smQty:735948,
+  // Inventory new fields
+  totalItems:1009, availItems:984, availQty:0, locations:861,
+  expired:0, exp1m:0, exp3m:74, exp6m:178,
+  agingPharma:420, agingMedical:360, agingLab:113, agingNupco:112
+};
+
+var employees = [
+  {name:'BIBEK JARGA MAGAR',role:'Data Entry',score:97,rating:'⭐ ممتاز'},
+  {name:'Shahad Al-Johani',role:'Data Entry',score:94,rating:'⭐ ممتاز'},
+  {name:'SOHEL MD KALAM AKON',role:'Order Picker',score:94,rating:'⭐ ممتاز'},
+  {name:'Abdulkareem Alef din',role:'Driver',score:93,rating:'⭐ ممتاز'},
+  {name:'Wurud RIFADAH Al-anazi',role:'Data Entry',score:92,rating:'⭐ ممتاز'},
+  {name:'NAWAR KHAN MUHAMMAD ALI KHAN',role:'Operator',score:90,rating:'⭐ ممتاز'},
+  {name:'Md Musharaof Hossen',role:'Team Leader',score:90,rating:'⭐ ممتاز'},
+  {name:'SOHAIL UR REHMAN MEHRAM KHAN',role:'Operator',score:92,rating:'⭐ ممتاز'},
+  {name:'PARVEZ ISLAM',role:'Order Picker',score:91,rating:'⭐ ممتاز'},
+  {name:'MD NAHID HASAN EMON',role:'Order Picker',score:87,rating:'✅ جيد جداً'},
+  {name:'SOLAYMAN MD ABDUL JABBAR',role:'Order Picker',score:88,rating:'✅ جيد جداً'},
+  {name:'ASHAKA RASSUL EMAM MAHADI',role:'Delivery Man',score:89,rating:'✅ جيد جداً'},
+  {name:'MD ROBEL HOSSAIN',role:'Delivery Man',score:86,rating:'✅ جيد جداً'},
+  {name:'Muqadar Ali Asghar Ali',role:'BT Operator',score:86,rating:'✅ جيد جداً'},
+  {name:'Md Al Amin Hossain',role:'Order Picker',score:86,rating:'✅ جيد جداً'},
+  {name:'MD EMON AMIN',role:'Order Picker',score:86,rating:'✅ جيد جداً'},
+  {name:'Muhammad hammad',role:'Driver',score:85,rating:'✅ جيد جداً'},
+  {name:'MD MAMUN HOSSAIN',role:'Cleaner',score:83,rating:'✅ جيد جداً'},
+  {name:'Palash Mia',role:'Cleaner',score:82,rating:'✅ جيد جداً'},
+  {name:'Maaz Khan Nasib',role:'Driver',score:80,rating:'✅ جيد جداً'}
+];
+
+// ─── NAVIGATION ───
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) {
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    document.querySelectorAll('.nav-btn').forEach(b=>{
+      if(b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+id+"'"))
+        b.classList.add('active');
+    });
+  }
+  window.scrollTo(0,0);
+}
+
+// ─── UPDATE MAIN DASH ───
+function updateMain() {
+  var total = S.nmItems + S.smItems + S.activeItems;
+  document.getElementById('mk-items').textContent = total.toLocaleString();
+  document.getElementById('mk-items-sub').textContent = S.nmItems+' غير متحرك · '+S.smItems+' بطيء · '+S.activeItems+' نشط';
+  document.getElementById('mk-orders').textContent = S.orders.toLocaleString();
+  document.getElementById('mk-orders-sub').textContent = S.alulaOrders+' العُلا · '+S.madOrders+' المدينة';
+  document.getElementById('mk-nm').textContent = S.nmItems;
+  document.getElementById('mk-nm-sub').textContent = 'مخزون: '+S.nmQty.toLocaleString()+' وحدة بدون حركة';
+  document.getElementById('mk-emp').textContent = parseFloat(S.empAvg).toFixed(1);
+  document.getElementById('mk-emp-sub').textContent = S.empExc+' ممتاز · '+S.empGood+' جيد جداً · من '+S.empCount;
+  document.getElementById('mk-sm').textContent = S.smItems;
+  document.getElementById('mk-trips').textContent = (S.alulaTrips+S.madTrips).toLocaleString();
+  // summary cards
+  document.getElementById('sc-items').textContent = total;
+  document.getElementById('sc-active').textContent = S.activeItems;
+  document.getElementById('sc-nm').textContent = S.nmItems;
+  document.getElementById('sc-sm').textContent = S.smItems;
+  document.getElementById('sc-orders').textContent = S.orders;
+  document.getElementById('sc-emerg').textContent = S.emergOrders;
+  document.getElementById('sc-emps').textContent = S.empCount;
+  document.getElementById('sc-avg').textContent = parseFloat(S.empAvg).toFixed(1);
+  // NM pie pcts
+  var t2 = S.nmItems+S.smItems+S.activeItems;
+  document.getElementById('pct-active').textContent = Math.round(S.activeItems/t2*100)+'%';
+  document.getElementById('pct-sm').textContent = Math.round(S.smItems/t2*100)+'%';
+  document.getElementById('pct-nm').textContent = Math.round(S.nmItems/t2*100)+'%';
+  if(nmMainChart) {nmMainChart.data.datasets[0].data=[S.activeItems,S.smItems,S.nmItems];nmMainChart.update();}
+}
+
+function updateInventory() {
+  var safe = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+  safe('ik-total',   (S.totalItems||0).toLocaleString());
+  safe('ik-qty',     (S.totalQty||0).toLocaleString());
+  safe('ik-avail',   (S.availQty||0).toLocaleString());
+  safe('ik-locs',    (S.locations||0).toLocaleString());
+  safe('ik-expired', (S.expired||0));
+  safe('ik-exp1m',   (S.exp1m||0));
+  safe('ik-exp3m',   (S.exp3m||0));
+  safe('ik-exp6m',   (S.exp6m||0));
+  safe('ik-exp-d0',  (S.expired||0));
+  safe('ik-exp-d3',  (S.exp3m||0));
+  safe('ik-exp-d6',  (S.exp6m||0));
+  // Aging profile bars
+  var total = (S.agingPharma||0)+(S.agingMedical||0)+(S.agingLab||0)+(S.agingNupco||0);
+  if(total>0){
+    safe('inv-n-pharma',  S.agingPharma||0);
+    safe('inv-n-medical', S.agingMedical||0);
+    safe('inv-n-lab',     S.agingLab||0);
+    safe('inv-n-nupco',   S.agingNupco||0);
+    var pb=document.getElementById('inv-bar-pharma');  if(pb) pb.style.width=Math.round((S.agingPharma||0)/total*100)+'%';
+    var mb=document.getElementById('inv-bar-medical'); if(mb) mb.style.width=Math.round((S.agingMedical||0)/total*100)+'%';
+    var lb=document.getElementById('inv-bar-lab');     if(lb) lb.style.width=Math.round((S.agingLab||0)/total*100)+'%';
+    var nb=document.getElementById('inv-bar-nupco');   if(nb) nb.style.width=Math.round((S.agingNupco||0)/total*100)+'%';
+  }
+  // Update main KPI card too
+  safe('mk-items-sub', (S.totalItems||0)+' صنف إجمالي');
+}
+
+function updateNMSM() {
+  var safe=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
+  safe('nk-nm', S.nmItems);
+  safe('nk-sm', S.smItems);
+  safe('nk-ac', S.activeItems);
+  safe('nk-nmqty', (S.nmQty||0).toLocaleString());
+  safe('nk-smqty', (S.smQty||0).toLocaleString());
+  safe('nk-nm-sub', (S.nmQty||0).toLocaleString()+' وحدة مجمّدة');
+  safe('nk-sm-sub', (S.smQty||0).toLocaleString()+' وحدة — توزيع منخفض');
+  safe('nk-ac-sub', S.activeItems+' صنف نشط');
+  var total = (S.nmItems||0)+(S.smItems||0)+(S.activeItems||0);
+  if(total>0){
+    safe('nk-pct-ac', Math.round((S.activeItems||0)/total*100)+'%');
+    safe('nk-pct-sm', Math.round((S.smItems||0)/total*100)+'%');
+    safe('nk-pct-nm', Math.round((S.nmItems||0)/total*100)+'%');
+  }
+  if(nmStockChart){
+    nmStockChart.data.datasets[0].data=[S.activeItems||0, S.smItems||0, S.nmItems||0];
+    nmStockChart.update();
+  }
+}
+
+function updateDispatch() {
+  document.getElementById('dk-feb').textContent = S.orders;
+  document.getElementById('dk-alula').textContent = S.alulaOrders;
+  document.getElementById('dk-mad').textContent = S.madOrders;
+  document.getElementById('dk-trips').textContent = (S.alulaTrips+S.madTrips).toLocaleString();
+  document.getElementById('dk-units').textContent = '1,185,126';
+  document.getElementById('dk-rush').textContent = S.rushOrders;
+}
+
+function updateEmployees() {
+  document.getElementById('ek-total').textContent = S.empCount;
+  document.getElementById('ek-avg').textContent = parseFloat(S.empAvg).toFixed(1);
+  document.getElementById('ek-exc').textContent = S.empExc;
+  document.getElementById('ek-good').textContent = S.empGood;
+  buildEmpTable();
+  if(empDistChart){empDistChart.data.datasets[0].data=[S.empExc,S.empGood];empDistChart.update();}
+}
+
+// ─── EMPLOYEE TABLE ───
+function buildEmpTable() {
+  var tb = document.getElementById('empTbody');
+  tb.innerHTML = '';
+  employees.forEach(function(e){
+    var av = e.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    var colors = ['rgba(0,184,217,0.2)','rgba(0,200,120,0.15)','rgba(255,176,0,0.15)','rgba(93,214,238,0.15)'];
+    var ci = Math.floor(Math.random()*colors.length);
+    var stars = Math.round(e.score/20);
+    var stHtml = '';
+    for(var i=0;i<5;i++) stHtml += i<stars?'<span style="color:#FFB000">★</span>':'<span style="color:rgba(255,176,0,0.2)">★</span>';
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><span style="font-size:10px;font-weight:600;color:#fff;">'+e.name+'</span></td>'+
+      '<td><span class="badge b-blue">'+e.role+'</span></td>'+
+      '<td><span style="font-size:13px;font-weight:700;color:'+(e.score>=90?'var(--ok)':e.score>=85?'var(--warn)':'var(--gr)')+'">'+e.score+'</span></td>'+
+      '<td><span class="badge '+(e.rating.includes('ممتاز')?'b-green':'b-yellow')+'">'+e.rating.replace('⭐ ','').replace('✅ ','')+'</span></td>';
+    tb.appendChild(tr);
+  });
+}
+
+// ─── EDIT SECTION ───
+function loadEditSection() {
+  var sec = document.getElementById('edit-section').value;
+  ['inventory','nmsm','dispatch','employees','machines'].forEach(function(s){
+    document.getElementById('ef-'+s).style.display = s===sec?'block':'none';
+  });
+}
+
+function applyEdit() {
+  var sec = document.getElementById('edit-section').value;
+  if(sec==='inventory') {
+    S.items = parseInt(document.getElementById('ef-total-items').value)||S.items;
+    S.totalQty = parseInt(document.getElementById('ef-total-qty').value)||S.totalQty;
+    S.activeItems = parseInt(document.getElementById('ef-active').value)||S.activeItems;
+    S.dispRate = parseInt(document.getElementById('ef-disp-rate').value)||S.dispRate;
+    updateInventory();
+  } else if(sec==='nmsm') {
+    S.nmItems = parseInt(document.getElementById('ef-nm').value)||S.nmItems;
+    S.smItems = parseInt(document.getElementById('ef-sm').value)||S.smItems;
+    S.activeItems = parseInt(document.getElementById('ef-ac').value)||S.activeItems;
+    S.nmQty = parseInt(document.getElementById('ef-nm-qty').value)||S.nmQty;
+    updateNMSM();
+    document.getElementById('nk-nm').textContent=S.nmItems;
+    document.getElementById('nk-sm').textContent=S.smItems;
+    document.getElementById('nk-ac').textContent=S.activeItems;
+  } else if(sec==='dispatch') {
+    S.orders = parseInt(document.getElementById('ef-feb-orders').value)||S.orders;
+    S.alulaOrders = parseInt(document.getElementById('ef-alula-orders').value)||S.alulaOrders;
+    S.madOrders = parseInt(document.getElementById('ef-mad-orders').value)||S.madOrders;
+    S.emergOrders = parseInt(document.getElementById('ef-emerg').value)||S.emergOrders;
+    S.alulaTrips = parseInt(document.getElementById('ef-alula-trips').value)||S.alulaTrips;
+    S.madTrips = parseInt(document.getElementById('ef-mad-trips').value)||S.madTrips;
+    updateDispatch();
+    if(destChart){destChart.data.datasets[0].data=[S.alulaOrders,S.madOrders];destChart.update();}
+  } else if(sec==='employees') {
+    S.empCount = parseInt(document.getElementById('ef-emp-count').value)||S.empCount;
+    S.empAvg = parseFloat(document.getElementById('ef-emp-avg').value)||S.empAvg;
+    S.empExc = parseInt(document.getElementById('ef-emp-exc').value)||S.empExc;
+    S.empGood = parseInt(document.getElementById('ef-emp-good').value)||S.empGood;
+    updateEmployees();
+  } else if(sec==='machines') {
+    for(var i=0;i<4;i++){
+      var hours = parseFloat(document.getElementById('ef-m'+i+'-hours').value)||0;
+      var rate  = parseInt(document.getElementById('ef-m'+i+'-rate').value)||0;
+      var last  = document.getElementById('ef-m'+i+'-last').value;
+      var next  = document.getElementById('ef-m'+i+'-next').value;
+      var days  = parseInt(document.getElementById('ef-m'+i+'-days').value)||0;
+      var stat  = document.getElementById('ef-m'+i+'-status').value;
+      machineData[i].hours = hours;
+      machineData[i].rate  = rate;
+      machineData[i].last  = last;
+      machineData[i].next  = next;
+      machineData[i].days  = days;
+      machineData[i].status= stat;
+    }
+    updateMachines();
+  }
+  updateMain();
+  var n = document.getElementById('notif');
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),4000);
+  goPage('main',null);
+}
+
+// ─── MACHINES STATE ───
+var machineData = [
+  {name:'10-Ton Refrigerated Truck', maxH:10, hours:7.5, rate:75, last:'10 فبراير 2026', next:'10 أبريل 2026', days:28,  status:'ok',      type:'صيانة دورية'},
+  {name:'5-Ton Refrigerated Truck 2',maxH:10, hours:8.0, rate:80, last:'1 مارس 2026',   next:'1 مايو 2026',   days:49,  status:'ok',      type:'صيانة دورية'},
+  {name:'Reach Truck 2',             maxH:8,  hours:6.0, rate:75, last:'15 يناير 2026', next:'15 مارس 2026',  days:-2,  status:'overdue', type:'فحص شامل'},
+  {name:'Cleaning Machine 1',        maxH:6,  hours:4.0, rate:67, last:'20 فبراير 2026',next:'20 مارس 2026',  days:7,   status:'soon',    type:'صيانة خفيفة'}
+];
+
+function updateMachines() {
+  var statMap = {
+    ok:     {badge:'b-green', txt:'في الموعد'},
+    soon:   {badge:'b-yellow',txt:'قريبة'},
+    overdue:{badge:'b-red',   txt:'متأخرة!'}
+  };
+  var totalRate=0, maintSoon=0, overdue=0;
+  machineData.forEach(function(m,i){
+    var pct = Math.round(m.hours/m.maxH*100);
+    var barColor = m.status==='overdue'?'var(--danger)':m.status==='soon'?'var(--warn)':'var(--ok)';
+    var valColor = m.status==='overdue'?'var(--danger)':m.status==='soon'?'var(--warn)':'var(--cy)';
+    document.getElementById('mhours-'+i).textContent = m.hours.toFixed(1);
+    document.getElementById('mhours-'+i).style.color = valColor;
+    document.getElementById('mrate-'+i).textContent  = m.rate+'%';
+    document.getElementById('mrate-'+i).style.color  = m.status==='ok'?'var(--ok)':'var(--warn)';
+    document.getElementById('mbar-'+i).style.width   = pct+'%';
+    document.getElementById('mbar-'+i).style.background = barColor;
+    document.getElementById('mbar-lbl-'+i).textContent  = m.hours.toFixed(1)+' / '+m.maxH+' س';
+    document.getElementById('mlast-'+i).textContent  = m.last;
+    document.getElementById('mnext-'+i).textContent  = m.next;
+    document.getElementById('mnext-'+i).style.color  = m.status==='overdue'?'var(--danger)':m.status==='soon'?'var(--warn)':'#fff';
+    var s = statMap[m.status];
+    document.getElementById('maintstat-'+i).innerHTML = '<span class="badge '+s.badge+'">'+s.txt+'</span>';
+    document.getElementById('mstatus-'+i).className   = 'badge '+(m.status==='ok'?'b-green':m.status==='soon'?'b-yellow':'b-red');
+    document.getElementById('mstatus-'+i).textContent = m.status==='ok'?'تشغيل':m.status==='soon'?'صيانة قريبة':'متأخرة';
+    if(m.status==='overdue'){
+      var d=Math.abs(m.days);
+      document.getElementById('mdaysbar-'+i).style.width='100%';
+      document.getElementById('mdaysbar-'+i).style.background='var(--danger)';
+      document.getElementById('mdayslbl-'+i).textContent='⚠ تجاوزت الموعد بـ '+d+' يوم';
+      document.getElementById('mdayslbl-'+i).style.color='var(--danger)';
+    } else if(m.status==='soon'){
+      var pctD = Math.max(5,Math.round(m.days/30*100));
+      document.getElementById('mdaysbar-'+i).style.width=pctD+'%';
+      document.getElementById('mdaysbar-'+i).style.background='var(--warn)';
+      document.getElementById('mdayslbl-'+i).textContent=m.days+' أيام متبقية';
+      document.getElementById('mdayslbl-'+i).style.color='var(--warn)';
+    } else {
+      var pctD2 = Math.min(99,Math.round(m.days/60*100));
+      document.getElementById('mdaysbar-'+i).style.width=pctD2+'%';
+      document.getElementById('mdaysbar-'+i).style.background='var(--ok)';
+      document.getElementById('mdayslbl-'+i).textContent=m.days+' يوم متبقي';
+      document.getElementById('mdayslbl-'+i).style.color='var(--ok)';
+    }
+    totalRate += m.rate;
+    if(m.status==='overdue') overdue++;
+    else if(m.status==='soon') maintSoon++;
+  });
+  var avgRate = Math.round(totalRate/machineData.length);
+  document.getElementById('mk-avgrun').textContent = avgRate+'%';
+  document.getElementById('mk-maint-soon').textContent = maintSoon;
+  document.getElementById('mk-overdue').textContent = overdue;
+  document.getElementById('sc-mach-rate').textContent = avgRate+'%';
+  document.getElementById('sc-mach-maint').textContent = maintSoon+' وحدة';
+  document.getElementById('sc-mach-overdue').textContent = overdue+' وحدة';
+  if(machUsageChart){
+    machUsageChart.data.datasets[0].data = machineData.map(m=>m.rate);
+    machUsageChart.update();
+  }
+}
+
+// ─── CHARTS ───
+var nmMainChart, nmStockChart, empDistChart, destChart, machUsageChart;
+
+function initCharts() {
+  // Main: dispatch progression
+  new Chart(document.getElementById('dispChart'),{
+    type:'line',
+    data:{
+      labels:['Oct','Nov','Dec','Jan','Feb'],
+      datasets:[{label:'طلبات',data:[219,671,768,1110,747],borderColor:'#00B8D9',backgroundColor:'rgba(0,184,217,0.08)',fill:true,tension:.4,pointBackgroundColor:'#00B8D9',pointRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8BA3BC',font:{size:10}}},y:{ticks:{color:'#8BA3BC',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // Main: NM donut
+  nmMainChart = new Chart(document.getElementById('nmChart'),{
+    type:'doughnut',
+    data:{labels:['نشطة','بطيئة','غير متحركة'],datasets:[{data:[259,209,224],backgroundColor:['#00C878','#FFB000','#F97068'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+  });
+
+  // Inventory stock bar
+  new Chart(document.getElementById('invStockChart'),{
+    type:'bar',
+    data:{
+      labels:['نشطة','بطيئة','غير متحركة'],
+      datasets:[
+        {label:'المخزون',data:[3456744,735948,200045],backgroundColor:'rgba(0,184,217,0.6)'},
+        {label:'التوزيع',data:[1771222,241378,0],backgroundColor:'rgba(0,200,120,0.6)'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8BA3BC',font:{size:9}}}},scales:{x:{ticks:{color:'#8BA3BC',font:{size:9}}},y:{ticks:{color:'#8BA3BC',font:{size:9},callback:v=>(v/1000000).toFixed(1)+'M'},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // NM aging bar chart
+  new Chart(document.getElementById('nmAgingChart'),{
+    type:'bar',
+    data:{
+      labels:['LAB-1','MEDICAL-30','NUPCO1','PHARMA-30','PHARMA-90'],
+      datasets:[
+        {label:'غير متحرك',data:[37,56,40,90,1],backgroundColor:'#F97068'},
+        {label:'بطيء',data:[14,58,22,115,0],backgroundColor:'#FFB000'},
+        {label:'نشط',data:[18,81,20,138,1],backgroundColor:'#00C878'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#8BA3BC',font:{size:9}}}},scales:{x:{stacked:true,ticks:{color:'#8BA3BC',font:{size:9}},grid:{color:'rgba(255,255,255,0.05)'}},y:{stacked:true,ticks:{color:'#8BA3BC',font:{size:9}}}}}
+  });
+
+  // NM stock donut
+  nmStockChart = new Chart(document.getElementById('nmStockChart'),{
+    type:'doughnut',
+    data:{labels:['نشطة','بطيئة','غير متحركة'],datasets:[{data:[3456744,735948,200045],backgroundColor:['#00C878','#FFB000','#F97068'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+  });
+
+  // Dispatch detail
+  new Chart(document.getElementById('dispDetailChart'),{
+    type:'bar',
+    data:{
+      labels:['Oct','Nov','Dec','Jan','Feb'],
+      datasets:[
+        {label:'مخطط',data:[208,648,621,1069,736],backgroundColor:'rgba(0,184,217,0.5)'},
+        {label:'طارئ',data:[11,23,147,41,11],backgroundColor:'rgba(249,112,104,0.7)'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8BA3BC',font:{size:9}}}},scales:{x:{stacked:true,ticks:{color:'#8BA3BC',font:{size:9}}},y:{stacked:true,ticks:{color:'#8BA3BC',font:{size:9}},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // Dest donut
+  destChart = new Chart(document.getElementById('destChart'),{
+    type:'doughnut',
+    data:{labels:['مستشفى العُلا','طلبات المدينة'],datasets:[{data:[308,439],backgroundColor:['#00B8D9','#FFB000'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{labels:{color:'#8BA3BC',font:{size:10}}}}}
+  });
+
+  // Employee role chart
+  new Chart(document.getElementById('roleChart'),{
+    type:'bar',
+    data:{
+      labels:['Data Entry','Order Picker','Operator','Team Leader','Delivery','Driver','BT Op','Cleaner'],
+      datasets:[{label:'متوسط الدرجة',data:[94.3,88.7,91,90,87.5,86,86,82.5],backgroundColor:'rgba(0,184,217,0.6)',borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8BA3BC',font:{size:8},maxRotation:45}},y:{min:75,max:100,ticks:{color:'#8BA3BC',font:{size:9}},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // Employee dist donut
+  empDistChart = new Chart(document.getElementById('empDistChart'),{
+    type:'doughnut',
+    data:{labels:['ممتاز ⭐','جيد جداً ✅'],datasets:[{data:[9,11],backgroundColor:['#00C878','#FFB000'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{labels:{color:'#8BA3BC',font:{size:10}}}}}
+  });
+
+  // Machines usage chart
+  machUsageChart = new Chart(document.getElementById('machUsageChart'),{
+    type:'bar',
+    data:{
+      labels:['10-Ton Truck','5-Ton Truck 2','Reach Truck 2','Cleaning Machine'],
+      datasets:[
+        {label:'معدل التشغيل %',data:[75,80,75,67],backgroundColor:['rgba(0,200,120,0.6)','rgba(0,200,120,0.6)','rgba(255,176,0,0.6)','rgba(0,184,217,0.6)'],borderRadius:6},
+        {label:'الهدف %',      data:[85,85,85,80],backgroundColor:'rgba(255,255,255,0.06)',borderRadius:6}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8BA3BC',font:{size:9}}}},
+      scales:{
+        x:{ticks:{color:'#8BA3BC',font:{size:9},maxRotation:15}},
+        y:{min:0,max:100,ticks:{color:'#8BA3BC',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,0.05)'}}
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════
+// PASSWORD PROTECTION
+// ════════════════════════════════════════
+// 🔑 غيّر كلمة المرور هنا
+var PASSWORDS = ['Mawsool@2026', 'AlUla@Store'];
+
+function checkPassword() {
+  var val = document.getElementById('pw-input').value;
+  var err = document.getElementById('pw-error');
+  if(PASSWORDS.includes(val)) {
+    // حفظ الجلسة لمدة 8 ساعات
+    var exp = Date.now() + 8*60*60*1000;
+    sessionStorage.setItem('maw_auth', exp);
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    err.textContent = '';
+  } else {
+    err.textContent = '✗ كلمة المرور غير صحيحة';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+    // اهتزاز بصري
+    var box = document.getElementById('pw-input');
+    box.style.borderColor='#F97068';
+    setTimeout(function(){box.style.borderColor='rgba(0,184,217,0.3)';},1500);
+  }
+}
+
+// تحقق إذا الجلسة لا تزال صالحة
+(function(){
+  var auth = sessionStorage.getItem('maw_auth');
+  if(auth && parseInt(auth) > Date.now()) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+  } else {
+    sessionStorage.removeItem('maw_auth');
+    // Focus على حقل كلمة المرور
+    setTimeout(function(){ var el=document.getElementById('pw-input'); if(el) el.focus(); },300);
+  }
+})();
+
+// ════════════════════════════════════════
+// GOOGLE SHEETS LIVE DATA
+// ════════════════════════════════════════
+var SHEETS = {
+  inventory: '1KrzuLH6yY2XYyE6iZkExJzXI49yyNy_u',
+  nmsm:      '1D2IN-moypBLzuy2VLg-WrIeXwm6lpQmn',
+  dispatch:  '112Z8bxdlZqe_lxd7OO3SFHOs4bWTbvR4',
+  employees: '1obqKWqDN9AW0X-1KbHzHciVjB4UerErV',
+  machines:  '1j_obcM-4LyYnYfxTUkV6OnNBj7TVOUra'
+};
+
+// آخر وقت تحديث
+var lastFetch = {};
+
+// ── Google Sheets JSON API (no CORS) ──
+// يستخدم Google Visualization API بدلاً من CSV — يتجاوز CORS تلقائياً
+function gvizUrl(sheetId, sheetName) {
+  var q = encodeURIComponent('select *');
+  var sheet = sheetName ? '&sheet='+encodeURIComponent(sheetName) : '';
+  return 'https://docs.google.com/spreadsheets/d/'+sheetId+'/gviz/tq?tqx=out:json&tq='+q+sheet;
+}
+
+function parseGviz(text) {
+  var json = text.replace(/^[^\(]+\(/, '').replace(/\);\s*$/, '');
+  try {
+    var data = JSON.parse(json);
+    var rows = [];
+    if(!data.table || !data.table.rows) return rows;
+    data.table.rows.forEach(function(row) {
+      var r = [];
+      (row.c || []).forEach(function(cell) {
+        if(!cell || cell.v === null || cell.v === undefined) r.push('');
+        else r.push(cell.v); // keep original type (number or string)
+      });
+      rows.push(r);
+    });
+    return rows;
+  } catch(e) { return []; }
+}
+
+function num(v) {
+  if(typeof v === 'number') return Math.round(v);
+  if(typeof v === 'string') return parseInt(v.replace(/[^0-9\.-]/g,''))||0;
+  return 0;
+}
+function flt(v) {
+  if(typeof v === 'number') return v;
+  if(typeof v === 'string') return parseFloat(v.replace(/[^0-9\.-]/g,''))||0;
+  return 0;
+}
+function str(v) { return v===null||v===undefined?'':String(v); }
+
+async function fetchGviz(sheetId, sheetName) {
+  var url = gvizUrl(sheetId, sheetName);
+  var res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  var text = await res.text();
+  return parseGviz(text);
+}
+
+function setStatus(id, ok, msg) {
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--ok)' : 'var(--danger)';
+}
+
+function fmtTime(d) {
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+':'+d.getSeconds().toString().padStart(2,'0');
+}
+
+// ── 1. INVENTORY ──────────────────────────
+async function fetchInventory() {
+  try {
+    // SUMMARY sheet — KPIs
+    var rows = await fetchGviz(SHEETS.inventory, 'SUMMARY');
+    rows.forEach(function(r){
+      var k=str(r[0]), v=r[1];
+      if(!k) return;
+      if(k.includes('إجمالي الأصناف')||k.includes('Total Items'))      { S.totalItems=num(v); }
+      else if(k.includes('أصناف متاحة')||k.includes('Available Items')) { S.availItems=num(v); }
+      else if(k.includes('إجمالي الكمية')||k.includes('Total Qty'))     { S.totalQty=num(v); }
+      else if(k.includes('كمية متاحة')||k.includes('Available Qty'))    { S.availQty=num(v); }
+      else if(k.includes('المواقع')||k.includes('Location'))            { S.locations=num(v); }
+      else if(k.includes('< 3')||k.includes('Exp <3'))                  { S.exp3m=num(v); }
+      else if(k.includes('< 6')||k.includes('Exp <6'))                  { S.exp6m=num(v); }
+      else if(k.includes('منتهية')||k.includes('Expired'))              { S.expired=num(v); }
+      else if(k.includes('PHARMA-30'))  { S.agingPharma=num(v); }
+      else if(k.includes('MEDICAL-30')) { S.agingMedical=num(v); }
+      else if(k.includes('LAB-1'))      { S.agingLab=num(v); }
+      else if(k.includes('NUPCO1'))     { S.agingNupco=num(v); }
+    });
+
+    // NEAR_EXPIRY sheet — جدول قريبي الانتهاء
+    try {
+      var rows2 = await fetchGviz(SHEETS.inventory, 'NEAR_EXPIRY');
+      var tbody = document.getElementById('inv-expiry-body');
+      if(tbody){
+        var html = '';
+        var count = 0;
+        rows2.forEach(function(r){
+          var itemNo=str(r[0]), desc=str(r[1]), bbd=str(r[2]);
+          var days=num(r[3]), loc=str(r[5]);
+          if(!itemNo||itemNo.includes('Item No')) return;
+          if(count>=10) return; // top 10 only
+          var dayColor = days<0?'var(--danger)':(days<=30?'var(--danger)':(days<=90?'var(--warn)':'var(--cy)'));
+          html += '<tr>'
+            +'<td style="font-size:9px">'+itemNo+'</td>'
+            +'<td style="text-align:right;font-size:9px">'+desc.substring(0,35)+'</td>'
+            +'<td>'+bbd+'</td>'
+            +'<td style="color:'+dayColor+';font-weight:700">'+days+'</td>'
+            +'<td style="font-size:9px">'+loc+'</td>'
+            +'</tr>';
+          count++;
+        });
+        tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:var(--ok)">✓ لا توجد أصناف قريبة الانتهاء</td></tr>';
+      }
+    } catch(e2){}
+
+    updateInventory();
+    lastFetch.inventory=new Date();
+    setStatus('sync-inventory',true,'✓ '+fmtTime(lastFetch.inventory));
+  } catch(e){ setStatus('sync-inventory',false,'✗ '+e.message); }
+}
+
+// ── 2. NM/SM ──────────────────────────────
+async function fetchNMSM() {
+  try {
+    // KPIs sheet
+    var rows = await fetchGviz(SHEETS.nmsm, 'KPIs');
+    rows.forEach(function(r){
+      var k=str(r[0]).trim(), v=r[1];
+      // skip header/title rows
+      if(!k||k.includes('مؤشر')||k.includes('KPI')||k.includes('NM/SM')) return;
+      var n=num(v);
+      if(k.includes('غير متحرك')&&n>0)  S.nmItems=n;
+      else if(k.includes('بطيء')&&n>0)   S.smItems=n;
+      else if(k.includes('نشط')&&!k.includes('غير')&&n>0) S.activeItems=n;
+      else if(k.includes('مخزون')&&n>0)  S.nmQty=n;
+      else if(k.includes('تاريخ')){
+        var el=document.getElementById('nk-date');
+        if(el) el.textContent=str(v)||'—';
+      }
+      else if(k.includes('فترة')||k.includes('Period')){
+        var el2=document.getElementById('nk-period');
+        if(el2) el2.textContent=str(v)||'—';
+      }
+    });
+
+    // SUMMARY sheet — جداول الأصناف
+    var rows2 = await fetchGviz(SHEETS.nmsm, 'SUMMARY');
+    var nmRows=[], smRows=[];
+    rows2.forEach(function(r){
+      var itemNo=str(r[0]).trim();
+      // skip title/header rows
+      if(!itemNo||itemNo.includes('ملف')||itemNo.includes('⚠')||itemNo.includes('رقم')||itemNo.includes('Item')) return;
+      var desc=str(r[1]), cat=str(r[2]);
+      var qty=num(r[3]), lastDisp=str(r[4]), days=str(r[5]), status=str(r[6]);
+      if(status.includes('غير متحرك')){
+        nmRows.push({itemNo:itemNo, desc:desc, qty:qty, cat:cat});
+      } else if(status.includes('بطيء')){
+        smRows.push({itemNo:itemNo, desc:desc, qty:qty, days:days, lastDisp:lastDisp});
+      }
+    });
+
+    // Render NM table
+    var nmBody = document.getElementById('nmsm-nm-body');
+    if(nmBody){
+      if(nmRows.length>0){
+        nmBody.innerHTML = nmRows.slice(0,12).map(function(r){
+          var badge=r.cat.includes('PHARMA')?'b-gray':(r.cat.includes('LAB')?'b-cyan':'b-gray');
+          return '<tr>'
+            +'<td style="font-size:9px">'+r.itemNo+'</td>'
+            +'<td style="text-align:right;font-size:9px">'+r.desc.substring(0,35)+'</td>'
+            +'<td>'+r.qty.toLocaleString()+'</td>'
+            +'<td><span class="badge '+badge+'">'+r.cat+'</span></td>'
+            +'</tr>';
+        }).join('');
+      } else {
+        nmBody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--gr)">لا توجد بيانات</td></tr>';
+      }
+    }
+
+    // Render SM table
+    var smBody = document.getElementById('nmsm-sm-body');
+    if(smBody){
+      if(smRows.length>0){
+        smBody.innerHTML = smRows.slice(0,12).map(function(r){
+          var d=parseInt(r.days)||0;
+          var cls=d>90?'b-red':(d>45?'b-yellow':'b-green');
+          var lbl=d>0?d+' يوم':(r.lastDisp||'—');
+          return '<tr>'
+            +'<td style="font-size:9px">'+r.itemNo+'</td>'
+            +'<td style="text-align:right;font-size:9px">'+r.desc.substring(0,35)+'</td>'
+            +'<td>'+r.qty.toLocaleString()+'</td>'
+            +'<td><span class="badge '+cls+'">'+lbl+'</span></td>'
+            +'</tr>';
+        }).join('');
+      } else {
+        smBody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--gr)">لا توجد بيانات</td></tr>';
+      }
+    }
+
+    updateNMSM(); updateMain();
+    lastFetch.nmsm=new Date();
+    setStatus('sync-nmsm',true,'✓ '+fmtTime(lastFetch.nmsm));
+  } catch(e){ setStatus('sync-nmsm',false,'✗ '+e.message); }
+}
+
+// ── 3. DISPATCH ───────────────────────────
+async function fetchDispatch() {
+  try {
+    var rows = await fetchGviz(SHEETS.dispatch, 'MONTHLY');
+    var dataRows = rows.filter(function(r){
+      var m=str(r[1]);
+      return m && !m.includes('Month') && !str(r[0]).includes('الإجمالي');
+    });
+    if(dataRows.length>0){
+      var last=dataRows[dataRows.length-1];
+      var planned=num(last[2]), emerg=num(last[3]), total=num(last[4])||planned+emerg;
+      var alTrips=num(last[6]), madTrips=num(last[7]);
+      if(total>0){ S.orders=total; S.emergOrders=emerg; }
+      if(alTrips>0)  S.alulaTrips=alTrips;
+      if(madTrips>0) S.madTrips=madTrips;
+    }
+    try {
+      var rows2 = await fetchGviz(SHEETS.dispatch, 'DESTINATIONS');
+      rows2.forEach(function(r){
+        var dest=str(r[0]), orders=num(r[1]);
+        if(!dest||orders===0) return;
+        if(dest.includes('ALULA')||dest.includes('العُلا')) S.alulaOrders=orders;
+        else if(dest.includes('Madina')||dest.includes('مدين')) S.madOrders=orders;
+      });
+    } catch(e2){}
+    updateDispatch(); updateMain();
+    lastFetch.dispatch=new Date();
+    setStatus('sync-dispatch',true,'✓ '+fmtTime(lastFetch.dispatch));
+  } catch(e){ setStatus('sync-dispatch',false,'✗ '+e.message); }
+}
+
+// ── 4. EMPLOYEES ──────────────────────────
+async function fetchEmployees() {
+  try {
+    var rows = await fetchGviz(SHEETS.employees, 'EVALUATIONS');
+    var scores=[], exc=0, good=0, newEmp=[];
+    rows.forEach(function(r){
+      var name=str(r[0]);
+      if(!name||name.includes('الاسم')||name.includes('الإجمالي')||name.includes('⚠')) return;
+      var role=str(r[1]), score=flt(r[3]), rating=str(r[4]);
+      if(score>0){
+        scores.push(score);
+        if(rating.includes('ممتاز')||score>=90) exc++;
+        else good++;
+        newEmp.push({name:name,role:role,score:score,rating:rating||(score>=90?'⭐ ممتاز':'✅ جيد جداً')});
+      }
+    });
+    if(scores.length>0){
+      S.empCount=scores.length;
+      S.empAvg=Math.round(scores.reduce(function(a,b){return a+b;},0)/scores.length*10)/10;
+      S.empExc=exc; S.empGood=good;
+      employees=newEmp.sort(function(a,b){return b.score-a.score;});
+      updateEmployees(); updateMain();
+    }
+    lastFetch.employees=new Date();
+    setStatus('sync-employees',true,'✓ '+fmtTime(lastFetch.employees));
+  } catch(e){ setStatus('sync-employees',false,'✗ '+e.message); }
+}
+
+// ── 5. MACHINES ───────────────────────────
+async function fetchMachines() {
+  try {
+    var rows = await fetchGviz(SHEETS.machines, 'MACHINES');
+    var statMap={'في الموعد':'ok','✅ في الموعد':'ok','قريبة':'soon','🟡 قريبة':'soon',
+                 'متأخرة':'overdue','🔴 متأخرة':'overdue','متأخرة!':'overdue','🔴 متأخرة!':'overdue'};
+    var idx=0;
+    rows.forEach(function(r){
+      var name=str(r[0]);
+      if(!name||name.includes('الآلة')||name.includes('معادلة')||name.includes('⚠')) return;
+      if(idx>=machineData.length) return;
+      var hours=flt(r[2])||machineData[idx].hours;
+      var rate =num(r[3])||machineData[idx].rate;
+      var last =str(r[4])||machineData[idx].last;
+      var next =str(r[5])||machineData[idx].next;
+      var days =num(r[6]); if(days===0) days=machineData[idx].days;
+      var rawSt=str(r[8]).trim();
+      var stat=statMap[rawSt]||machineData[idx].status;
+      machineData[idx].hours=hours; machineData[idx].rate=rate;
+      machineData[idx].last=last;   machineData[idx].next=next;
+      machineData[idx].days=days;   machineData[idx].status=stat;
+      idx++;
+    });
+    updateMachines();
+    lastFetch.machines=new Date();
+    setStatus('sync-machines',true,'✓ '+fmtTime(lastFetch.machines));
+  } catch(e){ setStatus('sync-machines',false,'✗ '+e.message); }
+}
+
+// ── DEBUG — يكشف وش يرجع من Google Sheets ──
+async function debugNMSM() {
+  try {
+    var rows = await fetchGviz(SHEETS.nmsm, 'KPIs');
+    var msg = '=== KPIs Sheet ('+rows.length+' rows) ===\n';
+    rows.forEach(function(r,i){ msg += i+': ['+r[0]+'] ['+r[1]+'] ['+r[2]+']\n'; });
+    alert(msg);
+  } catch(e){ alert('خطأ: '+e.message); }
+}
+
+// ── FETCH ALL ─────────────────────────────
+async function fetchAll() {
+  document.getElementById('sync-all-btn').textContent='⟳ جاري التحديث...';
+  await Promise.all([fetchInventory(), fetchNMSM(), fetchDispatch(), fetchEmployees(), fetchMachines()]);
+  document.getElementById('sync-all-btn').textContent='⟳ تحديث الآن';
+  document.getElementById('last-sync-time').textContent = 'آخر تحديث: '+fmtTime(new Date());
+}
+
+// ─── INIT ───
+window.addEventListener('load', async function(){
+  buildEmpTable();
+  initCharts();
+  updateMachines();
+  // جلب البيانات الحية فور الفتح
+  await fetchAll();
+  // تحديث تلقائي كل 60 ثانية
+  setInterval(fetchAll, 60000);
+});
+</script>
+</body>
+</html>
