@@ -1328,33 +1328,6 @@ function initCharts() {
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
   });
 
-  // Inventory stock bar
-  new Chart(document.getElementById('invStockChart'),{
-    type:'bar',
-    data:{
-      labels:['نشطة','بطيئة','غير متحركة'],
-      datasets:[
-        {label:'المخزون',data:[3456744,735948,200045],backgroundColor:'rgba(0,184,217,0.6)'},
-        {label:'التوزيع',data:[1771222,241378,0],backgroundColor:'rgba(0,200,120,0.6)'}
-      ]
-    },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8BA3BC',font:{size:9}}}},scales:{x:{ticks:{color:'#8BA3BC',font:{size:9}}},y:{ticks:{color:'#8BA3BC',font:{size:9},callback:v=>(v/1000000).toFixed(1)+'M'},grid:{color:'rgba(255,255,255,0.05)'}}}}
-  });
-
-  // NM aging bar chart
-  new Chart(document.getElementById('nmAgingChart'),{
-    type:'bar',
-    data:{
-      labels:['LAB-1','MEDICAL-30','NUPCO1','PHARMA-30','PHARMA-90'],
-      datasets:[
-        {label:'غير متحرك',data:[37,56,40,90,1],backgroundColor:'#F97068'},
-        {label:'بطيء',data:[14,58,22,115,0],backgroundColor:'#FFB000'},
-        {label:'نشط',data:[18,81,20,138,1],backgroundColor:'#00C878'}
-      ]
-    },
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#8BA3BC',font:{size:9}}}},scales:{x:{stacked:true,ticks:{color:'#8BA3BC',font:{size:9}},grid:{color:'rgba(255,255,255,0.05)'}},y:{stacked:true,ticks:{color:'#8BA3BC',font:{size:9}}}}}
-  });
-
   // NM stock donut
   nmStockChart = new Chart(document.getElementById('nmStockChart'),{
     type:'doughnut',
@@ -1590,7 +1563,6 @@ async function fetchNMSM() {
   try {
     // ── أولاً: KPIs للأرقام الرئيسية (مصدر الحقيقة)
     var rows = await fetchGviz(SHEETS.nmsm, 'KPIs');
-    console.log('KPIs rows:', JSON.stringify(rows));
     rows.forEach(function(r){
       var k = str(r[0]).replace(/\s+/g,' ').trim();
       var v = r[1];
