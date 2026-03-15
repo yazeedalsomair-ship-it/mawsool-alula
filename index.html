@@ -1561,25 +1561,14 @@ async function fetchInventory() {
 // ── 2. NM/SM ──────────────────────────────
 async function fetchNMSM() {
   try {
-    // ── أولاً: KPIs للأرقام الرئيسية (مصدر الحقيقة)
+    // من الـ Console تأكدنا: row[0]=غير متحركة=185, row[1]=بطيئة=219, row[2]=نشطة=259, row[3]=مخزون=200045
     var rows = await fetchGviz(SHEETS.nmsm, 'KPIs');
-    rows.forEach(function(r){
-      var k = str(r[0]).replace(/\s+/g,' ').trim();
-      var v = r[1];
-      if(!k || k.includes('مؤشر') || k.includes('KPI') || k.includes('مؤشرات')) return;
-      // الأرقام في KPIs أقل من 10000 → عدد أصناف
-      // الأرقام الكبيرة → كميات
-      if(k.includes('غير متحرك') && typeof v==='number')  S.nmItems = Math.round(v);
-      else if(k.includes('بطيء') && !k.includes('غير') && typeof v==='number') S.smItems = Math.round(v);
-      else if(k.includes('نشط') && !k.includes('غير') && typeof v==='number')  S.activeItems = Math.round(v);
-      else if(k.includes('مخزون') && typeof v==='number') S.nmQty = Math.round(v);
-      else if(k.includes('تاريخ') && str(v)){
-        var el=document.getElementById('nk-date'); if(el) el.textContent=str(v);
-      }
-      else if(k.includes('فترة') && str(v)){
-        var el2=document.getElementById('nk-period'); if(el2) el2.textContent=str(v);
-      }
-    });
+    if(rows.length >= 4) {
+      if(typeof rows[0][1] === 'number' && rows[0][1] < 10000) S.nmItems     = Math.round(rows[0][1]);
+      if(typeof rows[1][1] === 'number' && rows[1][1] < 10000) S.smItems     = Math.round(rows[1][1]);
+      if(typeof rows[2][1] === 'number' && rows[2][1] < 10000) S.activeItems = Math.round(rows[2][1]);
+      if(typeof rows[3][1] === 'number')                       S.nmQty       = Math.round(rows[3][1]);
+    }
 
     // ── ثانياً: SUMMARY للجداول فقط (مش للعد)
     var rows2 = await fetchGviz(SHEETS.nmsm, 'SUMMARY');
