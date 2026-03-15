@@ -1563,8 +1563,10 @@ async function fetchNMSM() {
   try {
     // من الـ Console تأكدنا: row[0]=غير متحركة=185, row[1]=بطيئة=219, row[2]=نشطة=259, row[3]=مخزون=200045
     var rows = await fetchGviz(SHEETS.nmsm, 'KPIs');
+    console.log('NM/SM KPIs raw:', rows.map(function(r){return [r[0],r[1]];}));
     if(rows.length >= 4) {
       var n0=num(rows[0][1]), n1=num(rows[1][1]), n2=num(rows[2][1]), n3=num(rows[3][1]);
+      console.log('parsed:', n0, n1, n2, n3);
       if(n0 > 0 && n0 < 10000) S.nmItems     = n0;
       if(n1 > 0 && n1 < 10000) S.smItems     = n1;
       if(n2 > 0 && n2 < 10000) S.activeItems = n2;
