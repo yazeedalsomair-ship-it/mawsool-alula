@@ -1299,38 +1299,36 @@ function updateEmployees() {
 // ─── EMPLOYEE TABLE ───
 // ══ معايير التقييم لكل وظيفة — مستخرجة من داش الموظفين ══
 
-// ── بيانات الحضور — فبراير 2026 ──
-var ATT_DATA = {
-  'BIBEK JARGA MAGAR':            {shift:'ليلي',  present:23, absent:3, late:15, pct:88.5},
-  'Shahad Al-Johani':             {shift:'صباحي', present:23, absent:3, late:8,  pct:88.5},
-  'SOHEL MD KALAM AKON':          {shift:'ليلي',  present:23, absent:3, late:15, pct:88.5},
-  'Abdulkareem Alef din':         {shift:'—',     present:null, absent:null, late:null, pct:null},
-  'Wurud RIFADAH Al-anazi':       {shift:'صباحي', present:23, absent:3, late:8,  pct:88.5},
-  'NAWAR KHAN MUHAMMAD ALI KHAN': {shift:'صباحي', present:26, absent:0, late:8,  pct:100},
-  'Md Musharaof Hossen':          {shift:'صباحي', present:23, absent:3, late:8,  pct:88.5},
-  'SOHAIL UR REHMAN MEHRAM KHAN': {shift:'ليلي',  present:26, absent:0, late:23, pct:100},
-  'PARVEZ ISLAM':                 {shift:'صباحي', present:26, absent:0, late:8,  pct:100},
-  'MD NAHID HASAN EMON':          {shift:'صباحي', present:26, absent:0, late:8,  pct:100},
-  'SOLAYMAN MD ABDUL JABBAR':     {shift:'صباحي', present:26, absent:0, late:8,  pct:100},
-  'ASHAKA RASSUL EMAM MAHADI':    {shift:'صباحي', present:23, absent:3, late:7,  pct:88.5},
-  'MD ROBEL HOSSAIN':             {shift:'صباحي', present:23, absent:3, late:6,  pct:88.5},
-  'Muqadar Ali Asghar Ali':       {shift:'صباحي', present:23, absent:3, late:6,  pct:88.5},
-  'Md Al Amin Hossain':           {shift:'—',     present:null, absent:null, late:null, pct:null},
-  'MD EMON AMIN':                 {shift:'صباحي', present:26, absent:0, late:8,  pct:100},
-  'Muhammad hammad':              {shift:'—',     present:null, absent:null, late:null, pct:null},
-  'MD MAMUN HOSSAIN':             {shift:'صباحي', present:26, absent:0, late:8,  pct:100},
-  'Palash Mia':                   {shift:'—',     present:null, absent:null, late:null, pct:null},
-  'Maaz Khan Nasib':              {shift:'—',     present:null, absent:null, late:null, pct:null},
-};
+// ── بيانات الحضور — تُقرأ من Google Sheets ──
+var ATT_DATA = {};
+
+async function fetchAttendance() {
+  try {
+    var rows = await fetchGviz(SHEETS.employees, 'ATTENDANCE');
+    var newData = {};
+    rows.forEach(function(r, i) {
+      if(i < 3) return;
+      var name  = str(r[0]).trim();
+      var shift = str(r[2]).trim();
+      var pres  = num(r[3]);
+      var abs   = num(r[4]);
+      var late  = num(r[5]);
+      var pct   = flt(r[6]);
+      if(!name || name.includes('الاسم') || name.includes('المتوسط') || !pres) return;
+      newData[name] = {shift:shift, present:pres, absent:abs, late:late, pct:pct};
+    });
+    if(Object.keys(newData).length > 0) ATT_DATA = newData;
+    buildAttTable();
+  } catch(e) { console.log('Attendance error:', e.message); }
+}
 
 function buildAttTable() {
   var tb = document.getElementById('attTbody');
   if(!tb) return;
-  var html = '';
-  var total_pct=[], full=0, absent_count=0, late_count=0;
+  var html = '', total_pct=[], full=0, absent_count=0, late_count=0;
   employees.forEach(function(e) {
     var d = ATT_DATA[e.name];
-    if(!d || d.present===null) {
+    if(!d) {
       html += '<tr><td style="font-size:10px;font-weight:600;color:#fff;text-align:right">'+e.name+'</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-gray">لا بيانات</span></td></tr>';
       return;
     }
@@ -1338,10 +1336,10 @@ function buildAttTable() {
     if(d.absent===0) full++;
     if(d.absent>0) absent_count++;
     if(d.late>0) late_count++;
-    var pct_col = d.pct>=95?'var(--ok)':d.pct>=88?'var(--warn)':'var(--danger)';
-    var abs_col = d.absent===0?'var(--ok)':d.absent<=2?'var(--warn)':'var(--danger)';
+    var pct_col  = d.pct>=95?'var(--ok)':d.pct>=88?'var(--warn)':'var(--danger)';
+    var abs_col  = d.absent===0?'var(--ok)':d.absent<=2?'var(--warn)':'var(--danger)';
     var late_col = d.late===0?'var(--ok)':d.late<=5?'var(--warn)':'var(--danger)';
-    var status = d.pct>=95?'<span class="badge b-green">✅ ممتاز</span>':d.pct>=88?'<span class="badge b-yellow">✅ جيد</span>':'<span class="badge b-red">⚠ مراجعة</span>';
+    var status   = d.pct>=95?'<span class="badge b-green">✅ ممتاز</span>':d.pct>=88?'<span class="badge b-yellow">✅ جيد</span>':'<span class="badge b-red">⚠ مراجعة</span>';
     var safeName = e.name.replace(/"/g,'&quot;');
     html += '<tr>'
       +'<td style="font-size:10px;font-weight:600;color:#fff;text-align:right;cursor:pointer;border-bottom:1px dotted rgba(196,33,106,0.4)" data-empname="'+safeName+'" onmouseenter="showEmpKPI(event,this.dataset.empname)" onmouseleave="hideEmpKPI()">'+e.name+'</td>'
@@ -1352,468 +1350,16 @@ function buildAttTable() {
       +'<td style="font-weight:700;color:'+pct_col+'">'+d.pct+'%</td>'
       +'<td>'+status+'</td></tr>';
   });
-  tb.innerHTML = html;
+  tb.innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--gr)">جاري التحميل...</td></tr>';
   var safe=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
-  var avg = total_pct.length ? (total_pct.reduce(function(a,b){return a+b;},0)/total_pct.length).toFixed(1)+'%' : '—';
-  safe('ek-att-avg', avg);
-  safe('ek-att-full', full);
-  safe('ek-att-absent', absent_count);
-  safe('ek-att-late', late_count);
-}
-
-var EMP_CRITERIA = {
-  'Order Picker': {
-    kpi:[
-      {name:'دقة التجهيز (نسبة الطلبات الصحيحة %)',max:15},
-      {name:'سرعة التجهيز (عدد الطلبات/اليوم)',max:15},
-      {name:'الالتزام بنظام FIFO/FEFO',max:10},
-      {name:'نسبة الطلبات المعادة بسبب خطأ (هدف ≤2%)',max:10},
-      {name:'الإنتاجية اليومية مقارنة بالمستهدف',max:10},
-    ],
-    behavior:[
-      {name:'الانضباط والالتزام بالدوام',max:10},
-      {name:'السلامة والنظافة في منطقة العمل',max:10},
-      {name:'روح الفريق والتعاون مع الزملاء',max:10},
-      {name:'الاستجابة للتعليمات والمشرف',max:10},
-      {name:'حضور الاجتماعات والالتزام بالتعليمات',max:10},
-    ]
-  },
-  'BT Operator':{
-    kpi:[
-      {name:'معدل الحوادث (هدف = صفر حوادث)',max:20},
-      {name:'الالتزام بالصيانة اليومية للجهاز',max:15},
-      {name:'دقة الترتيب والتخزين (%)',max:15},
-      {name:'عدد ساعات تعطل الجهاز بسبب الإهمال (هدف=0)',max:10},
-    ],
-    behavior:[
-      {name:'الانضباط والالتزام بالدوام',max:10},
-      {name:'الالتزام بمعايير السلامة دائمًا',max:15},
-      {name:'التعاون مع الفريق',max:10},
-      {name:'الاستجابة للتعليمات والمشرف',max:5},
-    ]
-  },
-  'Data Entry':{
-    kpi:[
-      {name:'دقة الإدخال (نسبة الأخطاء هدف ≤1%)',max:20},
-      {name:'سرعة الإنجاز (طلب/ساعة)',max:15},
-      {name:'الالتزام بمواعيد تسليم التقارير',max:15},
-      {name:'نظافة البيانات والأرشفة الصحيحة',max:10},
-    ],
-    behavior:[
-      {name:'الانضباط والالتزام بالدوام',max:10},
-      {name:'التعاون مع الفريق',max:10},
-      {name:'الاستجابة للتعليمات',max:10},
-      {name:'الحفاظ على سرية البيانات',max:10},
-    ]
-  },
-  'Delivery Man':{
-    kpi:[
-      {name:'نسبة التسليم في الوقت المحدد (%)',max:20},
-      {name:'حالة البضاعة عند التسليم (بدون تلف %)',max:15},
-      {name:'رضا العملاء (تقييم من 5)',max:15},
-      {name:'الالتزام بوثائق التسليم (%)',max:10},
-    ],
-    behavior:[
-      {name:'الانضباط والالتزام بالدوام',max:10},
-      {name:'الالتزام بقواعد المرور والسلامة',max:15},
-      {name:'التواصل الإيجابي مع العملاء',max:10},
-      {name:'الاستجابة للتعليمات',max:5},
-    ]
-  },
-  'Cleaner':{
-    kpi:[
-      {name:'مستوى نظافة المناطق المسؤول عنها (%)',max:20},
-      {name:'الالتزام بجدول التنظيف اليومي (%)',max:20},
-      {name:'كفاءة استخدام مواد التنظيف',max:10},
-      {name:'الاستجابة للطلبات الطارئة',max:10},
-    ],
-    behavior:[
-      {name:'الانضباط والالتزام بالدوام',max:10},
-      {name:'الالتزام بمعايير الصحة والسلامة',max:10},
-      {name:'التعاون مع الفريق',max:10},
-      {name:'الاستجابة للتعليمات',max:10},
-    ]
-  },
-  'Team Leader':{
-    kpi:[
-      {name:'أداء الفريق الكلي (مؤشرات الإنتاجية %)',max:15},
-      {name:'نسبة إنجاز أهداف القسم (%)',max:15},
-      {name:'معدل أخطاء الفريق (هدف ≤2%)',max:15},
-      {name:'تطوير الفريق (عدد التدريبات المنجزة)',max:15},
-    ],
-    behavior:[
-      {name:'الانضباط والالتزام بالدوام',max:10},
-      {name:'مهارات القيادة والتواصل',max:10},
-      {name:'حل النزاعات وإدارة الضغط',max:10},
-      {name:'تطبيق سياسات الشركة',max:10},
-    ]
-  },
-  'Driver':{
-    kpi:[
-      {name:'الالتزام بالجداول الزمنية للرحلات (%)',max:20},
-      {name:'سلامة المركبة (عدم الحوادث)',max:20},
-      {name:'حالة البضاعة أو الركاب عند الوصول',max:10},
-      {name:'الالتزام بوثائق ومستندات الرحلة',max:10},
-    ],
-    behavior:[
-      {name:'الانضباط والالتزام بالدوام',max:10},
-      {name:'الالتزام بقواعد المرور والسلامة',max:15},
-      {name:'التواصل الإيجابي',max:10},
-      {name:'الاستجابة للتعليمات',max:5},
-    ]
-  },
-  'Operator':{
-    kpi:[
-      {name:'معدل إنجاز المهام اليومية (%)',max:20},
-      {name:'دقة العمل وتجنب الأخطاء',max:20},
-      {name:'كفاءة استخدام الأدوات والمعدات',max:10},
-      {name:'الالتزام بمعايير الجودة',max:10},
-    ],
-    behavior:[
-      {name:'الانضباط والالتزام بالدوام',max:10},
-      {name:'السلامة في العمل',max:15},
-      {name:'التعاون مع الفريق',max:10},
-      {name:'الاستجابة للتعليمات',max:5},
-    ]
-  }
-};
-var EMP_DEFAULT_CRITERIA = {
-  kpi:[
-    {name:'الأداء العام في المهام الموكلة (%)',max:25},
-    {name:'الإنتاجية وإنجاز العمل في الوقت المحدد',max:20},
-    {name:'جودة العمل المنجز',max:15},
-  ],
-  behavior:[
-    {name:'الانضباط والالتزام بالدوام',max:15},
-    {name:'التعاون مع الفريق والزملاء',max:10},
-    {name:'الاستجابة للتعليمات والمشرف',max:10},
-    {name:'السلوك العام ومعايير الشركة',max:5},
-  ]
-};
-
-// ── Tooltip functions ──
-var empTT = null;
-function showEmpKPI(event, empName) {
-  var emp = employees.find(function(e){ return e.name === empName; });
-  if(!emp) return;
-  var crit = EMP_CRITERIA[emp.role] || EMP_DEFAULT_CRITERIA;
-  var scoreCol = emp.score>=90?'var(--ok)':emp.score>=80?'var(--warn)':'var(--danger)';
-  var levelLabel = emp.score>=90?'⭐ ممتاز':emp.score>=80?'✅ جيد جداً':'⚠ يحتاج تطوير';
-
-  var html = '<div style="font-weight:700;font-size:12px;color:#fff;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(196,33,106,0.3);">'
-    + '<span style="font-size:11px;color:var(--cy);">'+emp.role+'</span><br>'
-    + emp.name
-    + '</div>'
-    + '<div style="text-align:center;margin-bottom:10px;">'
-    + '<div style="font-size:28px;font-weight:900;color:'+scoreCol+'">'+emp.score+'</div>'
-    + '<div style="font-size:10px;color:'+scoreCol+'">'+levelLabel+'</div>'
-    + '</div>';
-
-  // KPIs
-  html += '<div style="font-size:9px;font-weight:700;color:var(--cy);margin-bottom:5px;letter-spacing:1px;">📊 مؤشرات الأداء (KPIs)</div>';
-  crit.kpi.forEach(function(item){
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
-      + '<span style="font-size:9px;color:#C89BAD;flex:1;line-height:1.3">'+item.name+'</span>'
-      + '<span style="font-size:10px;font-weight:700;color:var(--cy);margin-right:4px;white-space:nowrap;">/ '+item.max+'</span>'
-      + '</div>';
-  });
-
-  // Behavior
-  html += '<div style="font-size:9px;font-weight:700;color:var(--cy);margin:8px 0 5px;letter-spacing:1px;">🤝 السلوك والالتزام</div>';
-  crit.behavior.forEach(function(item){
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
-      + '<span style="font-size:9px;color:#C89BAD;flex:1;line-height:1.3">'+item.name+'</span>'
-      + '<span style="font-size:10px;font-weight:700;color:var(--cyl);margin-right:4px;white-space:nowrap;">/ '+item.max+'</span>'
-      + '</div>';
-  });
-
-  // Total
-  var kpiTotal = crit.kpi.reduce(function(s,i){return s+i.max;},0);
-  var behTotal = crit.behavior.reduce(function(s,i){return s+i.max;},0);
-  html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(196,33,106,0.3);display:flex;justify-content:space-between;font-size:9px;color:#C89BAD;">'
-    + '<span>KPIs: <b style="color:var(--cy)">'+kpiTotal+'</b></span>'
-    + '<span>سلوك: <b style="color:var(--cyl)">'+behTotal+'</b></span>'
-    + '<span>المجموع: <b style="color:#fff">100</b></span>'
-    + '</div>';
-
-  if(!empTT){
-    empTT = document.createElement('div');
-    empTT.style.cssText = 'position:fixed;z-index:9999;background:#1A0810;border:1px solid rgba(196,33,106,0.5);border-radius:12px;padding:14px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.6);pointer-events:none;direction:rtl;';
-    document.body.appendChild(empTT);
-  }
-  empTT.innerHTML = html;
-  empTT.style.display = 'block';
-  posEmpTT(event);
-}
-function posEmpTT(e) {
-  if(!empTT) return;
-  var x = e.clientX + 14, y = e.clientY + 14;
-  if(x + 270 > window.innerWidth)  x = e.clientX - 274;
-  if(y + 400 > window.innerHeight) y = e.clientY - empTT.offsetHeight - 10;
-  empTT.style.left = x+'px'; empTT.style.top = y+'px';
-}
-function hideEmpKPI() {
-  if(empTT) empTT.style.display = 'none';
-}
-document.addEventListener('mousemove', function(e){
-  if(empTT && empTT.style.display==='block') posEmpTT(e);
-});
-
-function buildEmpTable() {
-  var tb = document.getElementById('empTbody');
-  tb.innerHTML = '';
-  employees.forEach(function(e){
-    var stars = Math.round(e.score/20);
-    var stHtml = '';
-    for(var i=0;i<5;i++) stHtml += i<stars?'<span style="color:#FFB000">★</span>':'<span style="color:rgba(255,176,0,0.2)">★</span>';
-    var tr = document.createElement('tr');
-    var safeName = e.name.replace(/"/g,'&quot;');
-    var nameSpan = '<span style="font-size:10px;font-weight:600;color:#fff;cursor:pointer;border-bottom:1px dotted rgba(196,33,106,0.6);" data-empname="'+safeName+'" onmouseenter="showEmpKPI(event,this.dataset.empname)" onmouseleave="hideEmpKPI()">'+e.name+'</span>';
-    tr.innerHTML = '<td>'+nameSpan+'</td>'+
-      '<td><span class="badge b-blue">'+e.role+'</span></td>'+
-      '<td><span style="font-size:13px;font-weight:700;color:'+(e.score>=90?'var(--ok)':e.score>=85?'var(--warn)':'var(--gr)')+'">'+e.score+'</span></td>'+
-      '<td><span class="badge '+(e.rating.includes('ممتاز')?'b-green':'b-yellow')+'">'+e.rating.replace('⭐ ','').replace('✅ ','')+'</span></td>';
-    tb.appendChild(tr);
-  });
-}
-
-// ─── EDIT SECTION ───
-function loadEditSection() {
-  var sec = document.getElementById('edit-section').value;
-  ['inventory','nmsm','dispatch','employees','machines'].forEach(function(s){
-    document.getElementById('ef-'+s).style.display = s===sec?'block':'none';
-  });
-}
-
-function applyEdit() {
-  var sec = document.getElementById('edit-section').value;
-  if(sec==='inventory') {
-    S.items = parseInt(document.getElementById('ef-total-items').value)||S.items;
-    S.totalQty = parseInt(document.getElementById('ef-total-qty').value)||S.totalQty;
-    S.activeItems = parseInt(document.getElementById('ef-active').value)||S.activeItems;
-    S.dispRate = parseInt(document.getElementById('ef-disp-rate').value)||S.dispRate;
-    updateInventory();
-  } else if(sec==='nmsm') {
-    S.nmItems = parseInt(document.getElementById('ef-nm').value)||S.nmItems;
-    S.smItems = parseInt(document.getElementById('ef-sm').value)||S.smItems;
-    S.activeItems = parseInt(document.getElementById('ef-ac').value)||S.activeItems;
-    S.nmQty = parseInt(document.getElementById('ef-nm-qty').value)||S.nmQty;
-    updateNMSM();
-    document.getElementById('nk-nm').textContent=S.nmItems;
-    document.getElementById('nk-sm').textContent=S.smItems;
-    document.getElementById('nk-ac').textContent=S.activeItems;
-  } else if(sec==='dispatch') {
-    S.orders = parseInt(document.getElementById('ef-feb-orders').value)||S.orders;
-    S.alulaOrders = parseInt(document.getElementById('ef-alula-orders').value)||S.alulaOrders;
-    S.madOrders = parseInt(document.getElementById('ef-mad-orders').value)||S.madOrders;
-    S.emergOrders = parseInt(document.getElementById('ef-emerg').value)||S.emergOrders;
-    S.alulaTrips = parseInt(document.getElementById('ef-alula-trips').value)||S.alulaTrips;
-    S.madTrips = parseInt(document.getElementById('ef-mad-trips').value)||S.madTrips;
-    updateDispatch();
-    if(destChart){destChart.data.datasets[0].data=[S.alulaOrders,S.madOrders];destChart.update();}
-  } else if(sec==='employees') {
-    S.empCount = parseInt(document.getElementById('ef-emp-count').value)||S.empCount;
-    S.empAvg = parseFloat(document.getElementById('ef-emp-avg').value)||S.empAvg;
-    S.empExc = parseInt(document.getElementById('ef-emp-exc').value)||S.empExc;
-    S.empGood = parseInt(document.getElementById('ef-emp-good').value)||S.empGood;
-    updateEmployees();
-  } else if(sec==='machines') {
-    for(var i=0;i<4;i++){
-      var hours = parseFloat(document.getElementById('ef-m'+i+'-hours').value)||0;
-      var rate  = parseInt(document.getElementById('ef-m'+i+'-rate').value)||0;
-      var last  = document.getElementById('ef-m'+i+'-last').value;
-      var next  = document.getElementById('ef-m'+i+'-next').value;
-      var days  = parseInt(document.getElementById('ef-m'+i+'-days').value)||0;
-      var stat  = document.getElementById('ef-m'+i+'-status').value;
-      machineData[i].hours = hours;
-      machineData[i].rate  = rate;
-      machineData[i].last  = last;
-      machineData[i].next  = next;
-      machineData[i].days  = days;
-      machineData[i].status= stat;
-    }
-    updateMachines();
-  }
-  updateMain();
-  var n = document.getElementById('notif');
-  n.classList.add('show');
-  setTimeout(()=>n.classList.remove('show'),4000);
-  goPage('main',null);
-}
-
-// ─── MACHINES STATE ───
-var machineData = [
-  {name:'10-Ton Refrigerated Truck', maxH:10, hours:7.5, rate:75, last:'10 فبراير 2026', next:'10 أبريل 2026', days:28,  status:'ok',      type:'صيانة دورية'},
-  {name:'5-Ton Refrigerated Truck 2',maxH:10, hours:8.0, rate:80, last:'1 مارس 2026',   next:'1 مايو 2026',   days:49,  status:'ok',      type:'صيانة دورية'},
-  {name:'Reach Truck 2',             maxH:8,  hours:6.0, rate:75, last:'15 يناير 2026', next:'15 مارس 2026',  days:-2,  status:'overdue', type:'فحص شامل'},
-  {name:'Cleaning Machine 1',        maxH:6,  hours:4.0, rate:67, last:'20 فبراير 2026',next:'20 مارس 2026',  days:7,   status:'soon',    type:'صيانة خفيفة'}
-];
-
-function updateMachines() {
-  var statMap = {
-    ok:     {badge:'b-green', txt:'في الموعد'},
-    soon:   {badge:'b-yellow',txt:'قريبة'},
-    overdue:{badge:'b-red',   txt:'متأخرة!'}
-  };
-  var totalRate=0, maintSoon=0, overdue=0;
-  machineData.forEach(function(m,i){
-    var pct = Math.round(m.hours/m.maxH*100);
-    var barColor = m.status==='overdue'?'var(--danger)':m.status==='soon'?'var(--warn)':'var(--ok)';
-    var valColor = m.status==='overdue'?'var(--danger)':m.status==='soon'?'var(--warn)':'var(--cy)';
-    document.getElementById('mhours-'+i).textContent = m.hours.toFixed(1);
-    document.getElementById('mhours-'+i).style.color = valColor;
-    document.getElementById('mrate-'+i).textContent  = m.rate+'%';
-    document.getElementById('mrate-'+i).style.color  = m.status==='ok'?'var(--ok)':'var(--warn)';
-    document.getElementById('mbar-'+i).style.width   = pct+'%';
-    document.getElementById('mbar-'+i).style.background = barColor;
-    document.getElementById('mbar-lbl-'+i).textContent  = m.hours.toFixed(1)+' / '+m.maxH+' س';
-    document.getElementById('mlast-'+i).textContent  = m.last;
-    document.getElementById('mnext-'+i).textContent  = m.next;
-    document.getElementById('mnext-'+i).style.color  = m.status==='overdue'?'var(--danger)':m.status==='soon'?'var(--warn)':'#fff';
-    var s = statMap[m.status];
-    document.getElementById('maintstat-'+i).innerHTML = '<span class="badge '+s.badge+'">'+s.txt+'</span>';
-    document.getElementById('mstatus-'+i).className   = 'badge '+(m.status==='ok'?'b-green':m.status==='soon'?'b-yellow':'b-red');
-    document.getElementById('mstatus-'+i).textContent = m.status==='ok'?'تشغيل':m.status==='soon'?'صيانة قريبة':'متأخرة';
-    if(m.status==='overdue'){
-      var d=Math.abs(m.days);
-      document.getElementById('mdaysbar-'+i).style.width='100%';
-      document.getElementById('mdaysbar-'+i).style.background='var(--danger)';
-      document.getElementById('mdayslbl-'+i).textContent='⚠ تجاوزت الموعد بـ '+d+' يوم';
-      document.getElementById('mdayslbl-'+i).style.color='var(--danger)';
-    } else if(m.status==='soon'){
-      var pctD = Math.max(5,Math.round(m.days/30*100));
-      document.getElementById('mdaysbar-'+i).style.width=pctD+'%';
-      document.getElementById('mdaysbar-'+i).style.background='var(--warn)';
-      document.getElementById('mdayslbl-'+i).textContent=m.days+' أيام متبقية';
-      document.getElementById('mdayslbl-'+i).style.color='var(--warn)';
-    } else {
-      var pctD2 = Math.min(99,Math.round(m.days/60*100));
-      document.getElementById('mdaysbar-'+i).style.width=pctD2+'%';
-      document.getElementById('mdaysbar-'+i).style.background='var(--ok)';
-      document.getElementById('mdayslbl-'+i).textContent=m.days+' يوم متبقي';
-      document.getElementById('mdayslbl-'+i).style.color='var(--ok)';
-    }
-    totalRate += m.rate;
-    if(m.status==='overdue') overdue++;
-    else if(m.status==='soon') maintSoon++;
-  });
-  var avgRate = Math.round(totalRate/machineData.length);
-  document.getElementById('mk-avgrun').textContent = avgRate+'%';
-  document.getElementById('mk-maint-soon').textContent = maintSoon;
-  document.getElementById('mk-overdue').textContent = overdue;
-  document.getElementById('sc-mach-rate').textContent = avgRate+'%';
-  document.getElementById('sc-mach-maint').textContent = maintSoon+' وحدة';
-  document.getElementById('sc-mach-overdue').textContent = overdue+' وحدة';
-  if(machUsageChart){
-    machUsageChart.data.datasets[0].data = machineData.map(m=>m.rate);
-    machUsageChart.update();
+  if(total_pct.length){
+    safe('ek-att-avg', (total_pct.reduce(function(a,b){return a+b;},0)/total_pct.length).toFixed(1)+'%');
+    safe('ek-att-full', full);
+    safe('ek-att-absent', absent_count);
+    safe('ek-att-late', late_count);
   }
 }
 
-// ─── CHARTS ───
-var nmMainChart, nmStockChart, empDistChart, destChart, machUsageChart, dispDetailChart, receiptsChart;
-
-function initCharts() {
-  // Main: dispatch progression
-  new Chart(document.getElementById('dispChart'),{
-    type:'line',
-    data:{
-      labels:['Oct','Nov','Dec','Jan','Feb'],
-      datasets:[{label:'طلبات',data:[219,671,768,1110,747],borderColor:'#C4216A',backgroundColor:'rgba(196,33,106,0.08)',fill:true,tension:.4,pointBackgroundColor:'#C4216A',pointRadius:4}]
-    },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8BA3BC',font:{size:10}}},y:{ticks:{color:'#8BA3BC',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}}}
-  });
-
-  // Main: NM donut
-  nmMainChart = new Chart(document.getElementById('nmChart'),{
-    type:'doughnut',
-    data:{labels:['نشطة','بطيئة','غير متحركة'],datasets:[{data:[259,209,224],backgroundColor:['#00C878','#FFB000','#F97068'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
-  });
-
-  // NM stock donut
-  nmStockChart = new Chart(document.getElementById('nmStockChart'),{
-    type:'doughnut',
-    data:{labels:['نشطة','بطيئة','غير متحركة'],datasets:[{data:[3456744,735948,200045],backgroundColor:['#00C878','#FFB000','#F97068'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
-  });
-
-  // Dispatch detail
-  dispDetailChart = new Chart(document.getElementById('dispDetailChart'),{
-    type:'bar',
-    data:{
-      labels:['Oct','Nov','Dec','Jan','Feb'],
-      datasets:[
-        {label:'طلبات',data:[219,671,768,1110,747],backgroundColor:'rgba(196,33,106,0.7)',borderRadius:4}
-      ]
-    },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#C89BAD',font:{size:9}}}},scales:{x:{ticks:{color:'#C89BAD',font:{size:9}}},y:{ticks:{color:'#C89BAD',font:{size:9}},grid:{color:'rgba(196,33,106,0.08)'}}}}
-  });
-
-  // Dest donut
-  destChart = new Chart(document.getElementById('destChart'),{
-    type:'doughnut',
-    data:{labels:['مستشفى العُلا','طلبات المدينة'],datasets:[{data:[308,439],backgroundColor:['#C4216A','#FFB000'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{labels:{color:'#8BA3BC',font:{size:10}}}}}
-  });
-
-  // Employee role chart
-  new Chart(document.getElementById('roleChart'),{
-    type:'bar',
-    data:{
-      labels:['Data Entry','Order Picker','Operator','Team Leader','Delivery','Driver','BT Op','Cleaner'],
-      datasets:[{label:'متوسط الدرجة',data:[94.3,88.7,91,90,87.5,86,86,82.5],backgroundColor:'rgba(196,33,106,0.6)',borderRadius:4}]
-    },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8BA3BC',font:{size:8},maxRotation:45}},y:{min:75,max:100,ticks:{color:'#8BA3BC',font:{size:9}},grid:{color:'rgba(255,255,255,0.05)'}}}}
-  });
-
-  // Employee dist donut
-  empDistChart = new Chart(document.getElementById('empDistChart'),{
-    type:'doughnut',
-    data:{labels:['ممتاز ⭐','جيد جداً ✅'],datasets:[{data:[9,11],backgroundColor:['#00C878','#FFB000'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{labels:{color:'#8BA3BC',font:{size:10}}}}}
-  });
-
-  // Machines usage chart
-  machUsageChart = new Chart(document.getElementById('machUsageChart'),{
-    type:'bar',
-    data:{
-      labels:['10-Ton Truck','5-Ton Truck 2','Reach Truck 2','Cleaning Machine'],
-      datasets:[
-        {label:'معدل التشغيل %',data:[75,80,75,67],backgroundColor:['rgba(0,200,120,0.6)','rgba(0,200,120,0.6)','rgba(255,176,0,0.6)','rgba(196,33,106,0.6)'],borderRadius:6},
-        {label:'الهدف %',      data:[85,85,85,80],backgroundColor:'rgba(255,255,255,0.06)',borderRadius:6}
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#8BA3BC',font:{size:9}}}},
-      scales:{
-        x:{ticks:{color:'#8BA3BC',font:{size:9},maxRotation:15}},
-        y:{min:0,max:100,ticks:{color:'#8BA3BC',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,0.05)'}}
-      }
-    }
-  });
-
-  // Receipts chart
-  receiptsChart = new Chart(document.getElementById('receiptsChart'),{
-    type:'bar',
-    data:{
-      labels:['Pharmaceuticals','MedicalSupplies','LaboratorySupplies','General'],
-      datasets:[
-        {label:'المتوقع',  data:[0,0,0,0], backgroundColor:'rgba(255,176,0,0.6)',  borderRadius:4},
-        {label:'المستلم', data:[0,0,0,0], backgroundColor:'rgba(196,33,106,0.7)', borderRadius:4}
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#C89BAD',font:{size:9}}}},
-      scales:{
-        x:{ticks:{color:'#C89BAD',font:{size:9}}},
-        y:{ticks:{color:'#C89BAD',font:{size:9}},grid:{color:'rgba(196,33,106,0.08)'}}
-      }
-    }
-  });
-}
 
 // ════════════════════════════════════════
 // PASSWORD PROTECTION
@@ -2235,7 +1781,7 @@ async function fetchReceipts() {
 // ── FETCH ALL ─────────────────────────────
 async function fetchAll() {
   document.getElementById('sync-all-btn').textContent='⟳ جاري التحديث...';
-  await Promise.all([fetchInventory(), fetchNMSM(), fetchDispatch(), fetchEmployees(), fetchMachines(), fetchReceipts()]);
+  await Promise.all([fetchInventory(), fetchNMSM(), fetchDispatch(), fetchEmployees(), fetchMachines(), fetchReceipts(), fetchAttendance()]);
   document.getElementById('sync-all-btn').textContent='⟳ تحديث الآن';
   document.getElementById('last-sync-time').textContent = 'آخر تحديث: '+fmtTime(new Date());
 }
