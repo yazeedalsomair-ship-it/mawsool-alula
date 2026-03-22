@@ -10,7 +10,7 @@
 :root{
   --dk:#1A0810;--md:#220D16;--cy:#C4216A;--cyl:#E0518A;
   --cyp:rgba(123,36,97,0.12);--wh:#1A0A1E;--gr:#6B5070;--cb:#D0B8D8;
-  --warn:#FFB000;--danger:#F97068;--ok:#00C878;--brd:rgba(196,33,106,0.25);
+  --warn:#FFB000;--danger:#F97068;--ok:#00C878;--brd:rgba(255,255,255,0.15);
 }
 html,body{min-height:100%;background:#150A0E;font-family:'Segoe UI',Tahoma,Arial,sans-serif;}
 /* ─── TOP BAR ─── */
@@ -108,7 +108,7 @@ html,body{min-height:100%;background:#150A0E;font-family:'Segoe UI',Tahoma,Arial
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
 .ff{display:flex;flex-direction:column;gap:4px;}
 .fl{font-size:10px;color:rgba(255,255,255,0.85);}
-.fi{background:rgba(255,255,255,0.06);border:0.5px solid rgba(123,31,106,0.25);border-radius:6px;padding:7px 10px;color:#fff;font-size:12px;font-family:inherit;direction:rtl;width:100%;}
+.fi{background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.2);border-radius:6px;padding:7px 10px;color:#fff;font-size:12px;font-family:inherit;direction:rtl;width:100%;}
 .fi:focus{outline:none;border-color:var(--cy);}
 select.fi option{background:var(--dk);}
 .btn-row{display:flex;gap:8px;justify-content:flex-end;}
@@ -1322,7 +1322,7 @@ function buildAttTable() {
   employees.forEach(function(e) {
     var d = ATT_DATA[e.name];
     if(!d){
-      html+='<tr><td style="font-size:10px;font-weight:600;color:var(--wh);text-align:right">'+e.name+'</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-gray">لا بيانات</span></td></tr>';
+      html+='<tr><td style="font-size:10px;font-weight:600;color:#fff;text-align:right">'+e.name+'</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-gray">لا بيانات</span></td></tr>';
       return;
     }
     total_pct.push(d.pct);
@@ -1335,7 +1335,7 @@ function buildAttTable() {
     var st=d.pct>=95?'<span class="badge b-green">✅ ممتاز</span>':d.pct>=88?'<span class="badge b-yellow">✅ جيد</span>':'<span class="badge b-red">⚠ مراجعة</span>';
     var sn=e.name.replace(/"/g,'&quot;');
     html+='<tr>'
-      +'<td style="font-size:10px;font-weight:600;color:var(--wh);text-align:right;cursor:pointer;border-bottom:1px dotted var(--cyp)" data-empname="'+sn+'" onmouseenter="showEmpKPI(event,this.dataset.empname)" onmouseleave="hideEmpKPI()">'+e.name+'</td>'
+      +'<td style="font-size:10px;font-weight:600;color:#fff;text-align:right;cursor:pointer;border-bottom:1px dotted rgba(255,255,255,0.3)" data-empname="'+sn+'" onmouseenter="showEmpKPI(event,this.dataset.empname)" onmouseleave="hideEmpKPI()">'+e.name+'</td>'
       +'<td><span class="badge '+(d.shift==='ليلي'?'b-blue':'b-cyan')+'">'+d.shift+'</span></td>'
       +'<td style="font-weight:700;color:'+pc+'">'+d.present+' / 26</td>'
       +'<td style="font-weight:700;color:'+ac+'">'+d.absent+'</td>'
@@ -1529,7 +1529,7 @@ function showEmpKPI(event, empName) {
 
   if(!empTT){
     empTT = document.createElement('div');
-    empTT.style.cssText = 'position:fixed;z-index:9999;background:#1A0810;border:1px solid rgba(123,31,106,0.5);border-radius:12px;padding:14px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.6);pointer-events:none;direction:rtl;';
+    empTT.style.cssText = 'position:fixed;z-index:9999;background:#1A0810;border:1px solid rgba(196,33,106,0.5);border-radius:12px;padding:14px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.6);pointer-events:none;direction:rtl;';
     document.body.appendChild(empTT);
   }
   empTT.innerHTML = html;
