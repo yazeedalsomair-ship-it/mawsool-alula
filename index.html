@@ -1810,13 +1810,23 @@ function initCharts() {
 // PASSWORD PROTECTION
 // ════════════════════════════════════════
 // 🔑 غيّر كلمة المرور هنا
-var PASSWORDS = ['Mawsool@2026', 'AlUla@Store'];
+// 🔐 كلمة المرور مشفّرة بـ SHA-256
+// لتغيير الباسوورد: استخدم الأداة في آخر الملف
+var PASS_HASHES = [
+  '3c7e886e105fd9a7b07e6a9bcf4c64efe8b454559b1208bed247cbd8a9fd78b2', // Mawsool@2026
+  'b61b85490922741088361ab3eff8b3190162fa6e923824158c7293ce37d81af9'  // AlUla@Store
+];
 
-function checkPassword() {
+async function sha256(msg) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+
+async function checkPassword() {
   var val = document.getElementById('pw-input').value;
   var err = document.getElementById('pw-error');
-  if(PASSWORDS.includes(val)) {
-    // حفظ الجلسة لمدة 8 ساعات
+  var hash = await sha256(val);
+  if(PASS_HASHES.includes(hash)) {
     var exp = Date.now() + 8*60*60*1000;
     sessionStorage.setItem('maw_auth', exp);
     document.getElementById('login-screen').style.display = 'none';
@@ -1826,10 +1836,9 @@ function checkPassword() {
     err.textContent = '✗ كلمة المرور غير صحيحة';
     document.getElementById('pw-input').value = '';
     document.getElementById('pw-input').focus();
-    // اهتزاز بصري
     var box = document.getElementById('pw-input');
-    box.style.borderColor='#7B1F6A';
-    setTimeout(function(){box.style.borderColor='rgba(123,31,106,0.3)';},1500);
+    box.style.borderColor='#C4216A';
+    setTimeout(function(){box.style.borderColor='rgba(196,33,106,0.3)';},1500);
   }
 }
 
