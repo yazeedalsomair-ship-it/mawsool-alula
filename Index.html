@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RxScan Pro — Pharma5 + وصفة ورقية</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #080c10;
+  --s1: #0d1117;
+  --s2: #161b22;
+  --s3: #21262d;
+  --border: #30363d;
+  --blue: #58a6ff;
+  --blue-d: rgba(88,166,255,0.1);
+  --green: #3fb950;
+  --green-d: rgba(63,185,80,0.1);
+  --red: #f85149;
+  --red-d: rgba(248,81,73,0.1);
+  --yellow: #d29922;
+  --yellow-d: rgba(210,153,34,0.1);
+  --purple: #bc8cff;
+  --text: #e6edf3;
+  --t2: #8b949e;
+  --t3: #484f58;
+  --r: 12px;
+  --rs: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* Layout */
+.app{display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:100vh}
+@media(max-width:800px){.app{grid-template-columns:1fr}}
+
+/* Left panel - Camera */
+.cam-panel{background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+@media(max-width:800px){.cam-panel{position:relative;height:auto}}
+
+.panel-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.logo-wrap{display:flex;align-items:center;gap:8px}
+.logo-icon{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.logo-text{font-size:16px;font-weight:700;letter-spacing:-.5px}
+.logo-sub{font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace}
+.live-badge{display:flex;align-items:center;gap:5px;background:var(--red-d);border:1px solid rgba(248,81,73,.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--red)}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Camera zone */
+.cam-zone{flex:1;position:relative;background:#000;overflow:hidden;min-height:280px}
+#video{width:100%;height:100%;object-fit:cover;display:block}
+#canvas{display:none}
+
+.scan-overlay{position:absolute;inset:0;pointer-events:none}
+.scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:60%;border:1.5px solid var(--blue);border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.4)}
+.corner{position:absolute;width:16px;height:16px;border-color:var(--blue);border-style:solid}
+.corner.tl{top:-1px;right:-1px;border-width:2px 2px 0 0;border-radius:0 4px 0 0}
+.corner.tr{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:4px 0 0 0}
+.corner.bl{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 4px 0}
+.corner.br{bottom:-1px;left:-1px;border-width:0 0 2px 2px;border-radius:0 0 0 4px}
+.scan-line{position:absolute;left:4%;right:4%;height:1.5px;background:linear-gradient(90deg,transparent,var(--blue),transparent);animation:scanMove 2s ease-in-out infinite;box-shadow:0 0 6px var(--blue)}
+@keyframes scanMove{0%{top:8%}100%{top:88%}}
+.scan-line.off{display:none}
+.cam-label{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--t2);white-space:nowrap}
+
+.cam-err{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--s1)}
+.cam-err p{font-size:13px;color:var(--t2);text-align:center;max-width:220px;line-height:1.5}
+
+/* Camera controls */
+.cam-controls{padding:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.btn-row{display:flex;gap:8px}
+.btn{padding:10px 14px;border-radius:var(--rs);border:none;font-family:'IBM Plex Sans Arabic',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;flex:1}
+.btn-scan{background:var(--blue);color:#000;font-size:14px;font-weight:600;padding:13px}
+.btn-scan:hover{background:#79baff}
+.btn-scan:disabled{background:var(--s3);color:var(--t3);cursor:not-allowed}
+.btn-auto{background:var(--s2);color:var(--t2);border:1px solid var(--border)}
+.btn-auto:hover{border-color:var(--blue);color:var(--blue)}
+.btn-auto.on{background:var(--red-d);color:var(--red);border-color:rgba(248,81,73,.3)}
+.btn-clear{background:var(--s2);color:var(--t3);border:1px solid var(--border);flex:0;padding:10px 12px}
+.btn-clear:hover{color:var(--red)}
+
+/* API settings */
+.api-bar{background:var(--s2);border-top:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;align-items:center}
+.api-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text);outline:none}
+.api-input:focus{border-color:var(--blue)}
+.api-input::placeholder{color:var(--t3)}
+.api-save{padding:7px 12px;background:var(--blue);color:#000;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'IBM Plex Sans Arabic',sans-serif}
+.api-status{font-size:10px;color:var(--t3);white-space:nowrap}
+.api-status.ok{color:var(--green)}
+
+/* Progress */
+.progress{height:2px;background:var(--s3);overflow:hidden;display:none}
+.progress.on{display:block}
+.progress-fill{height:100%;background:var(--blue);animation:prog 1.2s ease-in-out infinite}
+@keyframes prog{0%{width:0%;margin-right:100%}50%{width:60%;margin-right:0}100%{width:0%;margin-left:100%}}
+
+/* Right panel - Results */
+.result-panel{padding:20px;overflow-y:auto;max-height:100vh}
+@media(max-width:800px){.result-panel{max-height:none}}
+
+/* Empty state */
+.empty{text-align:center;padding:60px 20px;color:var(--t3)}
+.empty-icon{font-size:48px;margin-bottom:12px;opacity:.4}
+.empty h3{font-size:16px;color:var(--t2);margin-bottom:6px}
+.empty p{font-size:13px;line-height:1.6}
+
+/* Steps indicator */
+.steps{display:flex;gap:0;margin-bottom:20px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.step-item{flex:1;padding:8px 6px;text-align:center;font-size:11px;color:var(--t3);border-left:1px solid var(--border);transition:all .3s;display:flex;flex-direction:column;align-items:center;gap:3px}
+.step-item:last-child{border-left:none}
+.step-item .s-icon{font-size:14px}
+.step-item.done{color:var(--green);background:var(--green-d)}
+.step-item.active{color:var(--blue);background:var(--blue-d)}
+
+/* Status banner */
+.status-banner{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--rs);margin-bottom:14px;border:1px solid}
+.status-banner .sb-icon{font-size:24px;flex-shrink:0}
+.status-banner .sb-title{font-size:15px;font-weight:600;margin-bottom:2px}
+.status-banner .sb-sub{font-size:12px;opacity:.8}
+.status-banner.safe{background:var(--green-d);border-color:rgba(63,185,80,.3);color:var(--green)}
+.status-banner.warn{background:var(--yellow-d);border-color:rgba(210,153,34,.3);color:var(--yellow)}
+.status-banner.danger{background:var(--red-d);border-color:rgba(248,81,73,.3);color:var(--red)}
+
+/* Section */
+.sec{margin-bottom:16px}
+.sec-title{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rs);padding:13px 14px;margin-bottom:8px}
+
+/* Drug cards */
+.drug-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px}
+.drug-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:12px}
+.drug-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.drug-dose{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--blue)}
+.drug-freq{font-size:11px;color:var(--t2);margin-top:3px}
+.drug-indication{font-size:11px;color:var(--purple);margin-top:4px;padding-top:4px;border-top:1px solid var(--border);line-height:1.4}
+.drug-fda{font-size:10px;color:var(--t3);margin-top:4px}
+
+/* Alert cards */
+.alert{display:flex;gap:10px;padding:11px 13px;border-radius:var(--rs);border:1px solid;margin-bottom:7px}
+.alert .al-icon{font-size:17px;flex-shrink:0;margin-top:1px}
+.alert .al-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.alert .al-desc{font-size:12px;opacity:.85;line-height:1.5}
+.alert .al-action{font-size:11px;margin-top:5px;opacity:.75;font-style:italic}
+.alert.danger{background:var(--red-d);border-color:rgba(248,81,73,.25);color:var(--red)}
+.alert.warn{background:var(--yellow-d);border-color:rgba(210,153,34,.25);color:var(--yellow)}
+.alert.info{background:var(--blue-d);border-color:rgba(88,166,255,.25);color:var(--blue)}
+.alert.safe{background:var(--green-d);border-color:rgba(63,185,80,.25);color:var(--green)}
+
+/* Patient counseling */
+.counsel-card{background:var(--s2);border:1px solid rgba(188,140,255,.25);border-radius:var(--rs);padding:14px;margin-bottom:8px}
+.counsel-drug{font-size:13px;font-weight:600;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.counsel-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.counsel-item:last-child{border-bottom:none}
+.counsel-label{font-size:11px;color:var(--t3);width:80px;flex-shrink:0;padding-top:1px}
+.counsel-val{font-size:12px;color:var(--t2);line-height:1.5;flex:1}
+
+/* FDA badge */
+.fda-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.2);color:var(--green);font-size:10px;padding:2px 7px;border-radius:20px;font-family:'IBM Plex Mono',monospace}
+
+/* Action buttons */
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;padding-top:4px}
+.act-btn{padding:9px 14px;border-radius:var(--rs);border:1px solid var(--border);background:var(--s2);color:var(--t2);font-family:'IBM Plex Sans Arabic',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.act-btn:hover{border-color:var(--blue);color:var(--blue)}
+.act-btn.approve{border-color:rgba(63,185,80,.4);color:var(--green)}
+.act-btn.approve:hover{background:var(--green-d)}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:9px 18px;font-size:12px;color:var(--t2);transition:transform .3s;z-index:99;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(63,185,80,.4);color:var(--green)}
+
+/* Spinner */
+.spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Mode switch */
+.mode-switch{display:flex;gap:0;padding:8px 12px;border-bottom:1px solid var(--border)}
+.mode-btn{flex:1;padding:7px;border:1px solid var(--border);background:var(--s2);color:var(--t2);font-family:'IBM Plex Sans Arabic',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+.mode-btn:first-child{border-radius:var(--rs) 0 0 var(--rs)}
+.mode-btn:last-child{border-radius:0 var(--rs) var(--rs) 0}
+.mode-btn.active{background:var(--blue-d);color:var(--blue);border-color:rgba(88,166,255,.4)}
+
+/* Patient card */
+.patient-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:12px}
+.patient-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-bottom:8px}
+.p-item{background:var(--s2);border-radius:6px;padding:6px 10px}
+.p-label{font-size:10px;color:var(--t3);margin-bottom:2px}
+.p-val{font-size:12px;color:var(--text);font-weight:500;line-height:1.3}
+.allergy-ok{display:inline-flex;align-items:center;gap:5px;background:var(--green-d);color:var(--green);border:1px solid rgba(63,185,80,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;margin-bottom:6px}
+.allergy-warn{display:inline-flex;align-items:center;gap:5px;background:var(--red-d);color:var(--red);border:1px solid rgba(248,81,73,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;margin-bottom:6px}
+.diag-tag{background:var(--blue-d);color:var(--blue);border:1px solid rgba(88,166,255,.2);border-radius:6px;padding:5px 10px;font-size:11px;line-height:1.5}
+
+/* QTY table */
+.qty-box{background:var(--s1);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;margin-bottom:12px}
+.qty-hdr{padding:8px 12px;background:rgba(63,185,80,.07);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--green)}
+.qty-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.qty-tbl th{text-align:right;padding:6px 10px;color:var(--t3);font-size:10px;border-bottom:1px solid var(--border);white-space:nowrap}
+.qty-tbl td{padding:7px 10px;border-bottom:1px solid var(--s3);color:var(--t2);vertical-align:middle}
+.qty-tbl tr:last-child td{border-bottom:none}
+.qty-tbl td:first-child{color:var(--text);font-weight:500}
+.qty-ok{color:var(--green);font-weight:600}
+.qty-bad{color:var(--red);font-weight:600}
+.qty-num{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:var(--green)}
+.qty-sys{font-family:'IBM Plex Mono',monospace;font-size:12px}
+.qty-bad-row td{background:rgba(248,81,73,.04)}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ LEFT — Camera Panel ═══════════════════════════ -->
+  <div class="cam-panel">
+    <div class="panel-header">
+      <div class="logo-wrap">
+        <div class="logo-icon">💊</div>
+        <div>
+          <div class="logo-text">RxScan Pro</div>
+          <div class="logo-sub">Pharma5 · ورقية · FDA · AI</div>
+        </div>
+      </div>
+      <div class="live-badge" id="liveBadge"><div class="live-dot"></div>LIVE</div>
+    </div>
+
+    <div class="mode-switch">
+      <button class="mode-btn active" id="modePharma" onclick="setMode('pharma')">🖥️ Pharma5</button>
+      <button class="mode-btn" id="modePaper" onclick="setMode('paper')">📄 وصفة ورقية</button>
+    </div>
+
+    <div class="progress" id="progress"><div class="progress-fill"></div></div>
+
+    <div class="cam-zone" id="camZone">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas"></canvas>
+      <div class="scan-overlay">
+        <div class="scan-frame">
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+          <div class="scan-line" id="scanLine"></div>
+        </div>
+      </div>
+      <div class="cam-label" id="camLabel">وجّه الكاميرا نحو الوصفة</div>
+      <div class="cam-err" id="camErr">
+        <div style="font-size:36px">📷</div>
+        <p>تعذّر الوصول للكاميرا<br>تأكد من منح الإذن</p>
+      </div>
+    </div>
+
+    <div class="cam-controls">
+      <button class="btn btn-scan" id="btnScan" onclick="doScan()">
+        ⚡ مسح وتحليل الوصفة
+      </button>
+      <div class="btn-row">
+        <button class="btn btn-auto" id="btnAuto" onclick="toggleAuto()">🔄 تلقائي</button>
+        <button class="btn btn-clear" onclick="clearAll()" title="مسح النتائج">✕</button>
+      </div>
+    </div>
+
+    <div class="api-bar">
+      <input type="password" id="apiKey" class="api-input" placeholder="sk-or-v1-... (OpenRouter API Key)">
+      <button class="api-save" onclick="saveKey()">حفظ</button>
+      <span class="api-status" id="apiStatus">غير محفوظ</span>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT — Results Panel ═══════════════════════════ -->
+  <div class="result-panel" id="resultPanel">
+
+    <!-- Empty state -->
+    <div class="empty" id="emptyState">
+      <div class="empty-icon">📋</div>
+      <h3>جاهز للمسح</h3>
+      <p>وجّه الكاميرا نحو الوصفة الطبية واضغط<br><strong>مسح وتحليل الوصفة</strong></p>
+      <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+        <div style="background:var(--green-d);border:1px solid rgba(63,185,80,.2);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--green)">✓ قراءة الوصفة بالكاميرا</div>
+        <div style="background:var(--blue-d);border:1px solid rgba(88,166,255,.2);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--blue)">✓ فحص FDA للتداخلات</div>
+        <div style="background:rgba(188,140,255,.1);border:1px solid rgba(188,140,255,.2);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--purple)">✓ نصائح للمريض بالعربية</div>
+      </div>
+    </div>
+
+    <!-- Main result (hidden initially) -->
+    <div id="mainResult" style="display:none">
+
+      <!-- Steps -->
+      <div class="steps" id="stepsBar">
+        <div class="step-item" id="step1"><div class="s-icon">📷</div>قراءة</div>
+        <div class="step-item" id="step2"><div class="s-icon">🏛️</div>FDA</div>
+        <div class="step-item" id="step3"><div class="s-icon">🤖</div>AI</div>
+        <div class="step-item" id="step4"><div class="s-icon">👤</div>نصائح</div>
+      </div>
+
+      <!-- Status -->
+      <div id="statusBanner"></div>
+
+      <!-- Patient card (Pharma5 mode) -->
+      <div class="patient-card" id="patientCard" style="display:none">
+        <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">👤 بيانات المريض</div>
+        <div class="patient-grid" id="patientGrid"></div>
+        <div id="allergyRow"></div>
+        <div id="diagRow"></div>
+      </div>
+
+      <!-- QTY calculation -->
+      <div class="sec" id="qtySection" style="display:none">
+        <div class="sec-title">🧮 حساب الكميات</div>
+        <div class="qty-box">
+          <div class="qty-hdr">🧮 الكميات المحسوبة — Dose × Freq × Duration</div>
+          <table class="qty-tbl">
+            <tr><th>الدواء</th><th>جرعة</th><th>التكرار</th><th>المدة</th><th>الصحيح</th><th>النظام</th><th>حالة</th></tr>
+            <tbody id="qtyBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Drugs -->
+      <div class="sec" id="drugsSection">
+        <div class="sec-title">💊 الأدوية المكتشفة <span class="fda-badge" style="margin-right:auto">FDA ✓</span></div>
+        <div class="drug-grid" id="drugGrid"></div>
+      </div>
+
+      <!-- Interactions -->
+      <div class="sec" id="interactionsSection">
+        <div class="sec-title">⚡ تداخلات وتحذيرات</div>
+        <div id="alertsList"></div>
+      </div>
+
+      <!-- Patient counseling -->
+      <div class="sec" id="counselSection">
+        <div class="sec-title">👤 نصائح للمريض — <span style="color:var(--purple)">بالعربية</span></div>
+        <div id="counselList"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-bar">
+        <button class="act-btn approve" onclick="approve()">✓ قبول وصرف</button>
+        <button class="act-btn" onclick="printCounsel()">🖨 طباعة نصائح المريض</button>
+        <button class="act-btn" onclick="doScan()">↻ إعادة المسح</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let stream = null, autoTimer = null, isScanning = false, lastData = null;
+
+// ══════════════════════════════════════════════════
+// CAMERA
+// ══════════════════════════════════════════════════
+async function initCam() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }
+    });
+    document.getElementById('video').srcObject = stream;
+    document.getElementById('camErr').style.display = 'none';
+  } catch {
+    document.getElementById('camErr').style.display = 'flex';
+    document.getElementById('btnScan').disabled = true;
+    document.getElementById('liveBadge').style.display = 'none';
+  }
+}
+
+function captureFrame() {
+  const v = document.getElementById('video');
+  const c = document.getElementById('canvas');
+  c.width = v.videoWidth || 640;
+  c.height = v.videoHeight || 480;
+  c.getContext('2d').drawImage(v, 0, 0);
+  return c.toDataURL('image/jpeg', 0.88).split(',')[1];
+}
+
+// ══════════════════════════════════════════════════
+// MODE SWITCH
+// ══════════════════════════════════════════════════
+let scanMode = 'pharma';
+function setMode(m) {
+  scanMode = m;
+  document.getElementById('modePharma').classList.toggle('active', m==='pharma');
+  document.getElementById('modePaper').classList.toggle('active', m==='paper');
+  document.getElementById('camLabel').textContent = m==='pharma'
+    ? 'صوّر شاشة Pharma5 كاملة بوضوح'
+    : 'وجّه الكاميرا نحو الوصفة الورقية';
+}
+
+// ══════════════════════════════════════════════════
+// QTY HELPERS
+// ══════════════════════════════════════════════════
+function parseFreq(f) {
+  if (!f) return 1;
+  const s = f.toLowerCase();
+  if (s.includes('once wkly') || s.includes('weekly') || s.includes('أسبوع')) return 1/7;
+  if (s.includes('twice wkly')) return 2/7;
+  if (s.includes('monthly') || s.includes('شهر')) return 1/30;
+  if (s.includes('twice') || s.includes('مرتين') || s==='bd'||s==='bid') return 2;
+  if (s.includes('three') || s.includes('ثلاث') || s==='tds'||s==='tid') return 3;
+  if (s.includes('four') || s==='qid') return 4;
+  if (s.includes('once') || s.includes('مرة')||s==='od'||s==='qd') return 1;
+  const m = s.match(/(\d+)\s*x/); if(m) return parseInt(m[1]);
+  return 1;
+}
+function parseDur(d) {
+  if (!d) return 30;
+  const s = d.toLowerCase();
+  const wk = s.match(/(\d+)\s*week/i); if(wk) return parseInt(wk[1])*7;
+  const mo = s.match(/(\d+)\s*month/i); if(mo) return parseInt(mo[1])*30;
+  const dy = s.match(/(\d+)\s*day/i); if(dy) return parseInt(dy[1]);
+  const nm = s.match(/(\d+)/); if(nm) return parseInt(nm[1]);
+  return 30;
+}
+function calcQty(drug) {
+  const dose = parseFloat(drug.qty_per_dose) || 1;
+  const fq = parseFreq(drug.frequency);
+  const days = parseDur(drug.duration);
+  return Math.ceil(dose * fq * days);
+}
+
+// ══════════════════════════════════════════════════
+// PROMPTS
+// ══════════════════════════════════════════════════
+function getPrompt(mode) {
+  if (mode === 'pharma') return `أنت نظام قراءة شاشة Pharma5 لصيدلية مستشفى.
+استخرج البيانات التالية من الصورة. أخرج JSON فقط — ابدأ بـ { مباشرة بدون أي نص:
+{"found":true,"source":"pharma5","patient":{"name":"من Patient name","mrn":"من MRN","age":"من Age/Sex","sex":"","weight":"من Weight"},"doctor":"من Doctor","order_no":"من Order NO","drug_allergy":"من Drug allergy — NKDA إذا لا يوجد","diagnosis":"من Diagnosis","drugs":[{"name":"من Item Name","generic":"الاسم العلمي","qty_per_dose":"رقم من Qty Per Dose","frequency":"من Freq","duration":"من Duration","route":"من Route","uom":"من UOM مثل TABLET","system_qty":"الكمية في عمود QOH أو Qty كرقم","indication":"المرض بالعربية","drug_class":""}]}
+إذا الصورة غير واضحة اكتب: {"found":false}`;
+
+  return `أنت نظام قراءة وصفات طبية ورقية. استخرج البيانات من الصورة.
+أخرج JSON فقط — ابدأ بـ { مباشرة:
+{"found":true,"source":"paper","patient":{"name":"...","age":"...","weight":"..."},"doctor":"...","drug_allergy":"NKDA","diagnosis":"...","drugs":[{"name":"...","generic":"الاسم العلمي","qty_per_dose":"1","frequency":"ONCE DAILY","duration":"30 Days","route":"oral","uom":"TABLET","system_qty":null,"indication":"المرض بالعربية","drug_class":""}]}
+إذا لا توجد وصفة: {"found":false}`;
+}
+
+// ══════════════════════════════════════════════════
+// API KEY
+// ══════════════════════════════════════════════════
+function saveKey() {
+  const k = document.getElementById('apiKey').value.trim();
+  if (!k.startsWith('sk-or-')) { showToast('مفتاح غير صحيح'); return; }
+  localStorage.setItem('rxscan_key', k);
+  document.getElementById('apiStatus').textContent = '✓ محفوظ';
+  document.getElementById('apiStatus').className = 'api-status ok';
+  document.getElementById('apiKey').value = '•'.repeat(18);
+  showToast('تم حفظ المفتاح ✓', true);
+}
+function getKey() { return localStorage.getItem('rxscan_key') || ''; }
+function initKey() {
+  if (getKey()) {
+    document.getElementById('apiStatus').textContent = '✓ محفوظ';
+    document.getElementById('apiStatus').className = 'api-status ok';
+    document.getElementById('apiKey').placeholder = '•'.repeat(18);
+  }
+}
+
+// ══════════════════════════════════════════════════
+// STEP INDICATOR
+// ══════════════════════════════════════════════════
+function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step'+i);
+    el.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+}
+
+// ══════════════════════════════════════════════════
+// OPENFDA
+// ══════════════════════════════════════════════════
+async function fetchFDA(drugName) {
+  const name = encodeURIComponent(drugName.toLowerCase().trim());
+  const url = `https://api.fda.gov/drug/label.json?search=openfda.generic_name:"${name}"&limit=1`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const r = data.results?.[0] || {};
+    return {
+      found: !!data.results?.length,
+      warnings: r.warnings?.[0] || '',
+      boxed: r.boxed_warning?.[0] || '',
+      interactions: r.drug_interactions?.[0] || '',
+      contraindications: r.contraindications?.[0] || '',
+      dosage: r.dosage_and_administration?.[0] || '',
+      adverse: r.adverse_reactions?.[0] || '',
+      brand: r.openfda?.brand_name?.[0] || drugName,
+      generic: r.openfda?.generic_name?.[0] || drugName
+    };
+  } catch { return { found: false }; }
+}
+
+// ══════════════════════════════════════════════════
+// MAIN SCAN FLOW
+// ══════════════════════════════════════════════════
+async function doScan() {
+  if (isScanning) return;
+  if (!getKey()) { showToast('أدخل مفتاح OpenRouter أولاً'); return; }
+
+  isScanning = true;
+  document.getElementById('btnScan').disabled = true;
+  document.getElementById('progress').classList.add('on');
+  document.getElementById('scanLine').classList.remove('off');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('mainResult').style.display = 'block';
+  setStep(1);
+
+  try {
+    const img = captureFrame();
+
+    // ── STEP 1: Read prescription with Claude ──────
+    setStep(1);
+    document.getElementById('camLabel').textContent = 'جاري القراءة...';
+
+    let rxRes;
+    try {
+      rxRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getKey()}`,
+          'HTTP-Referer': 'https://rxscan.app',
+          'X-Title': 'RxScan Pro'
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-sonnet-4-5',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: [
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${img}` } },
+            { type: 'text', text: getPrompt(scanMode) }
+          ]}] })
+      });
+    } catch (networkErr) {
+      showError('خطأ في الاتصال بالإنترنت', 'تحقق من اتصالك بالإنترنت ثم حاول مجدداً');
+      done(); return;
+    }
+
+    // Check HTTP status
+    if (!rxRes.ok) {
+      const errData = await rxRes.json().catch(() => ({}));
+      const errMsg = errData?.error?.message || `HTTP ${rxRes.status}`;
+      if (rxRes.status === 401) {
+        showError('مفتاح API غير صحيح أو منتهي', 'تحقق من مفتاح OpenRouter وأعد حفظه');
+        document.getElementById('apiStatus').textContent = '✗ مفتاح خاطئ';
+        document.getElementById('apiStatus').className = 'api-status';
+      } else if (rxRes.status === 402) {
+        showError('رصيد OpenRouter غير كافٍ', 'أضف رصيداً في openrouter.ai/credits');
+      } else if (rxRes.status === 429) {
+        showError('تجاوزت الحد المسموح من الطلبات', 'انتظر دقيقة ثم حاول مجدداً');
+      } else {
+        showError(`خطأ من OpenRouter (${rxRes.status})`, errMsg);
+      }
+      done(); return;
+    }
+
+    const rxData = await rxRes.json();
+
+    // Check for API-level error
+    if (rxData.error) {
+      showError('خطأ من OpenRouter API', rxData.error.message || 'خطأ غير معروف');
+      done(); return;
+    }
+
+    const rxText = rxData.choices?.[0]?.message?.content || '';
+    if (!rxText) {
+      showError('لم يتم استقبال رد من AI', 'حاول مجدداً أو تحقق من الرصيد');
+      done(); return;
+    }
+
+    let rx;
+    try {
+      rx = JSON.parse(rxText.replace(/```json|```/g,'').trim());
+    } catch {
+      showError('تعذّر قراءة الوصفة', 'الصورة غير واضحة أو لا تحتوي وصفة طبية');
+      done(); return;
+    }
+
+    if (!rx.found || !rx.drugs?.length) {
+      showStatus('warn','🔍', scanMode==='pharma'?'صوّر شاشة Pharma5 كاملة':'وجّه الكاميرا نحو الوصفة', 'تأكد من وضوح الصورة والإضاءة');
+      done(); return;
+    }
+
+    // normalize dose field (Pharma5 uses qty_per_dose, paper uses dose)
+    rx.drugs.forEach(d => {
+      if (!d.dose) d.dose = d.qty_per_dose || '1';
+      if (!d.qty_per_dose) d.qty_per_dose = d.dose || '1';
+    });
+
+    // ── حساب الكميات ──────────────────────────────
+    rx.drugs.forEach(d => {
+      d.calc_qty = calcQty(d);
+      d.sys_qty = d.system_qty ? parseFloat(d.system_qty) : null;
+      d.qty_match = d.sys_qty === null ? null : Math.abs(d.calc_qty - d.sys_qty) <= 1;
+    });
+
+    // ── STEP 2: FDA lookup for each drug ──────────
+    setStep(2);
+    document.getElementById('camLabel').textContent = 'جاري فحص FDA...';
+    const fdaResults = await Promise.all(rx.drugs.map(d => fetchFDA(d.generic || d.name)));
+    rx.drugs.forEach((d, i) => { d.fda = fdaResults[i]; });
+
+    // ── STEP 3: AI clinical analysis ──────────────
+    setStep(3);
+    document.getElementById('camLabel').textContent = 'جاري التحليل السريري...';
+
+    const fdaCtx = rx.drugs.map((d,i) => `
+الدواء: ${d.name} (${d.generic||''})
+الجرعة: ${d.dose||d.qty_per_dose||1} ${d.uom||''} | التكرار: ${d.frequency} | المدة: ${d.duration}
+FDA Boxed Warning: ${d.fda?.boxed ? 'نعم' : 'لا'}
+FDA تحذيرات: ${(d.fda?.warnings||'').slice(0,300)}
+FDA تداخلات: ${(d.fda?.interactions||'').slice(0,300)}
+FDA موانع: ${(d.fda?.contraindications||'').slice(0,200)}`).join('\n---\n');
+
+    // بناء نصائح افتراضية من بيانات الدواء
+    function buildDefaultCounsel(drugs) {
+      return drugs.map(d => ({
+        drug: d.name,
+        indication: d.indication || 'راجع طبيبك لمعرفة سبب الوصف',
+        how_to_take: `تناول ${d.dose||d.qty_per_dose||1} ${d.uom||''} ${d.route === 'oral' ? 'عن طريق الفم' : d.route || ''}`,
+        timing: d.frequency || 'حسب تعليمات الطبيب',
+        food_interaction: 'يمكن تناوله مع أو بدون طعام إلا إذا نصح الطبيب بخلاف ذلك',
+        side_effects: d.fda?.adverse ? d.fda.adverse.slice(0,120) : 'راجع النشرة الداخلية للدواء',
+        warning_signs: 'تواصل مع الطبيب فوراً عند أي أعراض غير اعتيادية',
+        storage: 'احفظ في مكان بارد وجاف بعيداً عن الضوء والأطفال'
+      }));
+    }
+
+    // بناء prompt مبسط ومحكم
+    const drugList = rx.drugs.map(d => `- ${d.name} (${d.generic}) ${d.dose} ${d.frequency} لمدة ${d.duration} — الاستخدام: ${d.indication || 'غير محدد'}`).join('\n');
+    const counselPrompt = `أنت صيدلاني سريري. أعطني نصائح مختصرة وعملية لكل دواء في هذه الوصفة باللغة العربية.
+
+الأدوية:
+${drugList}
+
+المريض: ${rx.patient?.name||'مريض'}, العمر: ${rx.patient?.age||'غير محدد'}
+
+لكل دواء أعطني:
+1. الاستخدام: لماذا يأخذ المريض هذا الدواء (جملة واحدة مبسطة)
+2. كيفية الأخذ (جملة واحدة)
+3. أفضل وقت للأخذ
+4. علاقته بالطعام
+5. أهم آثار جانبية يتوقعها المريض (2-3 فقط)
+6. متى يتصل بالطبيب (جملة واحدة)
+7. طريقة الحفظ
+
+ابدأ ردك بـ [ مباشرة وأخرج JSON array فقط:
+[{"drug":"اسم الدواء","indication":"لماذا يأخذه المريض بكلام بسيط","how_to_take":"...","timing":"...","food_interaction":"...","side_effects":"...","warning_signs":"...","storage":"..."}]`;
+
+    let aiRes2;
+    try {
+      aiRes2 = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getKey()}`,
+          'HTTP-Referer': 'https://rxscan.app',
+          'X-Title': 'RxScan Pro'
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-sonnet-4-5',
+          max_tokens: 1500,
+          messages: [
+            {
+              role: 'system',
+              content: 'أنت صيدلاني سريري خبير. أخرج JSON فقط بدون أي كلام إضافي. ابدأ ردك بـ [ مباشرة.'
+            },
+            {
+              role: 'user',
+              content: counselPrompt
+            }
+          ]
+        })
+      });
+    } catch {
+      setStep(4);
+      const fallbackAi = { overall:'warn', overall_msg:'تم استخراج الأدوية — تعذّر الاتصال للتحليل', alerts:[], counsel: buildDefaultCounsel(rx.drugs) };
+      lastData = { rx, ai: fallbackAi };
+      renderAll(rx, fallbackAi);
+      done(); return;
+    }
+
+    if (!aiRes2.ok) {
+      setStep(4);
+      const fallbackAi = { overall:'warn', overall_msg:'تم استخراج الأدوية — خطأ في API', alerts:[], counsel: buildDefaultCounsel(rx.drugs) };
+      lastData = { rx, ai: fallbackAi };
+      renderAll(rx, fallbackAi);
+      done(); return;
+    }
+
+    const aiData = await aiRes2.json();
+    const aiRaw = aiData.choices?.[0]?.message?.content || '';
+
+    // استخراج JSON بطريقة محكمة
+    let counsel = [];
+    try {
+      // محاولة 1: استخراج array مباشرة
+      const arrMatch = aiRaw.match(/\[[\s\S]*\]/);
+      if (arrMatch) counsel = JSON.parse(arrMatch[0]);
+    } catch {
+      try {
+        // محاولة 2: تنظيف وإعادة المحاولة
+        const cleaned = aiRaw.replace(/```json|```/g,'').trim();
+        const arrMatch2 = cleaned.match(/\[[\s\S]*\]/);
+        if (arrMatch2) counsel = JSON.parse(arrMatch2[0]);
+      } catch {
+        // محاولة 3: بيانات افتراضية
+        counsel = buildDefaultCounsel(rx.drugs);
+      }
+    }
+
+    // بناء نتيجة التحليل مع التداخلات من FDA
+    const hasBoxed = rx.drugs.some(d => d.fda?.boxed);
+    const alerts = [];
+    if (hasBoxed) {
+      const boxedDrug = rx.drugs.find(d => d.fda?.boxed);
+      alerts.push({ type:'danger', title:`تحذير Boxed Warning — ${boxedDrug.name}`, desc: boxedDrug.fda.boxed.slice(0,200), action:'راجع الطبيب قبل الصرف' });
+    }
+    // تحقق من التداخلات إذا أكثر من دواء
+    if (rx.drugs.length > 1) {
+      rx.drugs.forEach(d => {
+        if (d.fda?.interactions && d.fda.interactions.length > 50) {
+          const others = rx.drugs.filter(x => x.name !== d.name).map(x => x.name);
+          alerts.push({ type:'info', title:`تداخلات محتملة — ${d.name}`, desc: d.fda.interactions.slice(0,150), action:'راجع قائمة التداخلات الكاملة' });
+        }
+      });
+    }
+
+    const ai = {
+      overall: hasBoxed ? 'danger' : alerts.length ? 'warn' : 'safe',
+      overall_msg: hasBoxed ? 'يوجد Boxed Warning — مراجعة إلزامية' : `تم تحليل ${rx.drugs.length} دواء بنجاح`,
+      alerts,
+      counsel: counsel.length ? counsel : buildDefaultCounsel(rx.drugs)
+    };
+
+    // ── STEP 4: Render everything ──────────────────
+    setStep(4);
+    lastData = { rx, ai };
+    renderAll(rx, ai);
+
+  } catch (err) {
+    showError('خطأ غير متوقع', err?.message || 'حاول مجدداً أو تحقق من الاتصال');
+  }
+  done();
+}
+
+function done() {
+  isScanning = false;
+  document.getElementById('btnScan').disabled = false;
+  document.getElementById('progress').classList.remove('on');
+  document.getElementById('scanLine').classList.add('off');
+  document.getElementById('camLabel').textContent = 'وجّه الكاميرا نحو الوصفة';
+}
+
+// ══════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════
+function renderAll(rx, ai) {
+  // Status banner
+  const cls = ai.overall || 'safe';
+  const icon = {safe:'✅',warn:'⚠️',danger:'🚨'}[cls]||'✅';
+  const qtyBad = (rx.drugs||[]).filter(d=>d.qty_match===false).length;
+  document.getElementById('statusBanner').innerHTML = `
+    <div class="status-banner ${cls}">
+      <div class="sb-icon">${icon}</div>
+      <div>
+        <div class="sb-title">${ai.overall_msg||'تم تحليل الوصفة'}</div>
+        <div class="sb-sub">${rx.drugs?.length||0} دواء · ${ai.alerts?.length||0} تنبيه${qtyBad?` · ⚠️ ${qtyBad} فرق في الكمية`:''} · ${rx.source==='pharma5'?'Pharma5':'وصفة ورقية'}</div>
+      </div>
+    </div>`;
+
+  // Patient card
+  const ptCard = document.getElementById('patientCard');
+  const pt = rx.patient || {};
+  if (pt.name || pt.mrn || rx.doctor || rx.drug_allergy) {
+    ptCard.style.display = 'block';
+    const cells = [
+      pt.name && `<div class="p-item"><div class="p-label">الاسم</div><div class="p-val">${pt.name}</div></div>`,
+      pt.mrn  && `<div class="p-item"><div class="p-label">MRN</div><div class="p-val" style="font-family:monospace;font-size:11px">${pt.mrn}</div></div>`,
+      (pt.age||pt.sex) && `<div class="p-item"><div class="p-label">العمر / الجنس</div><div class="p-val">${[pt.age,pt.sex].filter(Boolean).join(' · ')}</div></div>`,
+      pt.weight && `<div class="p-item"><div class="p-label">الوزن</div><div class="p-val">${pt.weight}</div></div>`,
+      rx.doctor && `<div class="p-item"><div class="p-label">الطبيب</div><div class="p-val">${rx.doctor}</div></div>`,
+      rx.order_no && `<div class="p-item"><div class="p-label">رقم الأمر</div><div class="p-val" style="font-family:monospace;font-size:11px">${rx.order_no}</div></div>`,
+    ].filter(Boolean).join('');
+    document.getElementById('patientGrid').innerHTML = cells;
+
+    const allergy = rx.drug_allergy || '';
+    const nkda = !allergy || allergy.toUpperCase().includes('NKDA') || allergy.toLowerCase().includes('no known');
+    document.getElementById('allergyRow').innerHTML = `
+      <div class="${nkda?'allergy-ok':'allergy-warn'}">
+        ${nkda ? '✓ NKDA — لا حساسية معروفة' : `⚠️ حساسية: ${allergy}`}
+      </div>`;
+    document.getElementById('diagRow').innerHTML = rx.diagnosis
+      ? `<div class="diag-tag">🏥 ${rx.diagnosis}</div>` : '';
+  } else { ptCard.style.display = 'none'; }
+
+  // QTY table
+  const qtySection = document.getElementById('qtySection');
+  const hasPharma = rx.drugs?.some(d => d.sys_qty !== null);
+  if (rx.drugs?.length) {
+    qtySection.style.display = 'block';
+    document.getElementById('qtyBody').innerHTML = (rx.drugs||[]).map(d => {
+      const fqPerDay = parseFreq(d.frequency);
+      const days = parseDur(d.duration);
+      const fqLabel = fqPerDay < 1 ? `مرة/${Math.round(1/fqPerDay)} يوم` : `${fqPerDay}×/يوم`;
+      const matchEl = d.qty_match === null
+        ? `<span style="color:var(--t3)">—</span>`
+        : d.qty_match
+          ? `<span class="qty-ok">✓</span>`
+          : `<span class="qty-bad">✗ راجع</span>`;
+      return `<tr class="${d.qty_match===false?'qty-bad-row':''}">
+        <td style="font-size:11px;max-width:120px">${d.name}</td>
+        <td>${d.qty_per_dose||d.dose||1} ${d.uom||''}</td>
+        <td style="font-size:11px">${fqLabel}</td>
+        <td style="font-size:11px">${days}يوم</td>
+        <td><span class="qty-num">${d.calc_qty}</span></td>
+        <td><span class="${d.qty_match===false?'qty-bad':'qty-sys'}">${d.sys_qty??'—'}</span></td>
+        <td>${matchEl}</td>
+      </tr>`;
+    }).join('');
+  } else { qtySection.style.display = 'none'; }
+
+  // Drug cards
+  document.getElementById('drugGrid').innerHTML = (rx.drugs||[]).map(d => `
+    <div class="drug-card">
+      <div class="drug-name">${d.name}</div>
+      <div class="drug-dose">${d.qty_per_dose||d.dose||''} ${d.uom||''}</div>
+      <div class="drug-freq">${[d.frequency,d.duration,d.route].filter(Boolean).join(' · ')}</div>
+      ${d.indication ? `<div class="drug-indication">🎯 ${d.indication}</div>` : ''}
+      <div class="drug-fda">
+        ${d.fda?.found ? `<span class="fda-badge">FDA ✓</span>` : `<span style="color:var(--t3);font-size:10px">FDA: غير موجود</span>`}
+        ${d.fda?.boxed ? ` <span style="color:var(--red);font-size:10px">⬛ Boxed</span>` : ''}
+        ${d.qty_match===false ? ` <span style="color:var(--yellow);font-size:10px">⚠️ كمية مختلفة</span>` : ''}
+      </div>
+    </div>`).join('');
+
+  // Alerts — add qty mismatch alerts
+  const qtyAlerts = (rx.drugs||[]).filter(d=>d.qty_match===false).map(d=>({
+    type:'warn', title:`⚠️ فرق في الكمية — ${d.name}`,
+    desc:`الكمية المحسوبة: ${d.calc_qty} ${d.uom||''} · النظام: ${d.sys_qty}`,
+    action:'راجع الكمية قبل الصرف'
+  }));
+  const allAlerts = [...(ai.alerts||[]), ...qtyAlerts];
+
+  const alertsEl = document.getElementById('alertsList');
+  if (!allAlerts.length) {
+    alertsEl.innerHTML = `<div class="alert safe"><div class="al-icon">✅</div><div><div class="al-title">لا تنبيهات</div><div class="al-desc">لا تعارض دوائي · الكميات صحيحة · الوصفة تبدو آمنة</div></div></div>`;
+  } else {
+    alertsEl.innerHTML = allAlerts.map(a => `
+      <div class="alert ${a.type||'info'}">
+        <div class="al-icon">${{danger:'🚨',warn:'⚠️',info:'ℹ️'}[a.type]||'ℹ️'}</div>
+        <div>
+          <div class="al-title">${a.title||''}</div>
+          <div class="al-desc">${a.desc||''}</div>
+          ${a.action?`<div class="al-action">→ ${a.action}</div>`:''}
+        </div>
+      </div>`).join('');
+  }
+
+  // Patient counseling
+  const counselEl = document.getElementById('counselList');
+  if (!ai.counsel?.length) {
+    counselEl.innerHTML = `<div class="card" style="color:var(--t2);font-size:13px">لم يتم توليد نصائح</div>`;
+  } else {
+    counselEl.innerHTML = ai.counsel.map(c => `
+      <div class="counsel-card">
+        <div class="counsel-drug">💊 ${c.drug}</div>
+        ${c.indication?`<div class="counsel-item" style="background:rgba(188,140,255,.06);border-radius:6px;padding:6px 8px;margin-bottom:4px"><div class="counsel-label" style="color:var(--purple)">🎯 لماذا</div><div class="counsel-val" style="color:var(--purple)">${c.indication}</div></div>`:''}
+        ${c.how_to_take?`<div class="counsel-item"><div class="counsel-label">كيفية الأخذ</div><div class="counsel-val">${c.how_to_take}</div></div>`:''}
+        ${c.timing?`<div class="counsel-item"><div class="counsel-label">التوقيت</div><div class="counsel-val">${c.timing}</div></div>`:''}
+        ${c.food_interaction?`<div class="counsel-item"><div class="counsel-label">مع الطعام</div><div class="counsel-val">${c.food_interaction}</div></div>`:''}
+        ${c.side_effects?`<div class="counsel-item"><div class="counsel-label">آثار جانبية</div><div class="counsel-val">${c.side_effects}</div></div>`:''}
+        ${c.warning_signs?`<div class="counsel-item"><div class="counsel-label">راجع الطبيب</div><div class="counsel-val" style="color:var(--yellow)">${c.warning_signs}</div></div>`:''}
+        ${c.storage?`<div class="counsel-item"><div class="counsel-label">الحفظ</div><div class="counsel-val">${c.storage}</div></div>`:''}
+      </div>`).join('');
+  }
+}
+
+function showError(title, detail) {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('mainResult').style.display = 'block';
+  document.getElementById('statusBanner').innerHTML = `
+    <div class="status-banner danger">
+      <div class="sb-icon">❌</div>
+      <div>
+        <div class="sb-title">${title}</div>
+        <div class="sb-sub">${detail}</div>
+      </div>
+    </div>`;
+  document.getElementById('drugGrid').innerHTML = '';
+  document.getElementById('alertsList').innerHTML = `
+    <div class="alert warn">
+      <div class="al-icon">💡</div>
+      <div>
+        <div class="al-title">خطوات لحل المشكلة</div>
+        <div class="al-desc">
+          1. تأكد من اتصال الإنترنت<br>
+          2. تحقق من صحة مفتاح OpenRouter (يبدأ بـ sk-or-v1-)<br>
+          3. تأكد من وجود رصيد في openrouter.ai/credits<br>
+          4. تأكد أن الموديل <b>anthropic/claude-sonnet-4-5</b> متاح في حسابك<br>
+          5. جرّب مسح المفتاح وإعادة حفظه
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('counselList').innerHTML = '';
+}
+
+function showStatus(type, icon, title, sub) {
+  document.getElementById('mainResult').style.display = 'block';
+  document.getElementById('statusBanner').innerHTML = `
+    <div class="status-banner ${type}">
+      <div class="sb-icon">${icon}</div>
+      <div><div class="sb-title">${title}</div><div class="sb-sub">${sub}</div></div>
+    </div>`;
+  document.getElementById('drugGrid').innerHTML = '';
+  document.getElementById('alertsList').innerHTML = '';
+  document.getElementById('counselList').innerHTML = '';
+}
+
+// ══════════════════════════════════════════════════
+// AUTO MODE
+// ══════════════════════════════════════════════════
+function toggleAuto() {
+  const btn = document.getElementById('btnAuto');
+  if (autoTimer) {
+    clearInterval(autoTimer); autoTimer = null;
+    btn.textContent = '🔄 تلقائي';
+    btn.classList.remove('on');
+  } else {
+    btn.textContent = '⏹ إيقاف';
+    btn.classList.add('on');
+    doScan();
+    autoTimer = setInterval(doScan, 15000);
+  }
+}
+
+// ══════════════════════════════════════════════════
+// PRINT COUNSELING
+// ══════════════════════════════════════════════════
+function printCounsel() {
+  if (!lastData) return;
+  const { rx, ai } = lastData;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+<title>نصائح المريض</title>
+<style>
+  body{font-family:Arial,sans-serif;padding:30px;color:#111;direction:rtl;max-width:650px;margin:0 auto}
+  h1{font-size:20px;margin-bottom:5px}
+  .sub{font-size:12px;color:#666;margin-bottom:20px}
+  .drug-sec{border:1px solid #ddd;border-radius:8px;padding:15px;margin-bottom:15px}
+  .drug-name{font-size:15px;font-weight:bold;color:#0066cc;margin-bottom:10px}
+  table{width:100%;border-collapse:collapse}
+  td{padding:7px 10px;border-bottom:1px solid #eee;font-size:13px;vertical-align:top}
+  td:first-child{color:#888;width:100px;white-space:nowrap}
+  .footer{margin-top:30px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:10px}
+  @media print{button{display:none}}
+</style></head><body>
+<h1>💊 تعليمات الأدوية</h1>
+<div class="sub">المريض: ${rx.patient?.name||'—'} | الطبيب: ${rx.doctor||'—'} | التاريخ: ${rx.date||new Date().toLocaleDateString('ar')}</div>
+${(ai.counsel||[]).map(c=>`
+<div class="drug-sec">
+  <div class="drug-name">${c.drug}</div>
+  <table>
+    ${c.how_to_take?`<tr><td>طريقة الأخذ</td><td>${c.how_to_take}</td></tr>`:''}
+    ${c.indication?`<tr><td style="color:#6600cc;font-weight:bold">لماذا وُصف</td><td style="color:#6600cc">${c.indication}</td></tr>`:''}
+    ${c.timing?`<tr><td>التوقيت</td><td>${c.timing}</td></tr>`:''}
+    ${c.food_interaction?`<tr><td>مع الطعام</td><td>${c.food_interaction}</td></tr>`:''}
+    ${c.side_effects?`<tr><td>آثار جانبية</td><td>${c.side_effects}</td></tr>`:''}
+    ${c.warning_signs?`<tr><td style="color:#cc0000">راجع الطبيب</td><td style="color:#cc0000">${c.warning_signs}</td></tr>`:''}
+    ${c.storage?`<tr><td>الحفظ</td><td>${c.storage}</td></tr>`:''}
+  </table>
+</div>`).join('')}
+<div class="footer">هذه النصائح أُنتجت بمساعدة الذكاء الاصطناعي استناداً لقاعدة بيانات FDA — الصيدلاني مسؤول عن المراجعة والتأكيد النهائي</div>
+<br><button onclick="window.print()">🖨 طباعة</button>
+</body></html>
